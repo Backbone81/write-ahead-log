@@ -17,6 +17,12 @@ type Header struct {
 	// time if necessary.
 	Version uint32
 
+	// Describes the way the entry length is encoded in the segment file.
+	EntryLengthType EntryLengthEncoding
+
+	// Describes the way the entry checksum is encoded in the segment file.
+	EntryChecksumType EntryChecksumType
+
 	// The sequence number the first entry in the segment file has. Note that the file name and this header value
 	// should always match. To have the first sequence number stored in the header makes it possible to detect
 	// accidental file renames.

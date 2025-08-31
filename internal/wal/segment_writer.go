@@ -31,6 +31,9 @@ type SegmentWriter struct {
 
 	// The policy describing how data is flushed to disk.
 	syncPolicy SyncPolicy
+
+	entryLengthWriter   EntryLengthWriter
+	entryChecksumWriter EntryChecksumWriter
 }
 
 // CreateSegment creates a new segment file in the given directory. It will create the new file with the file extension
