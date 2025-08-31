@@ -1,0 +1,28 @@
+#!/bin/bash
+set -e
+
+VERSION=$(go list -m -f "{{ .Version }}" github.com/onsi/ginkgo/v2)
+
+# Get the name and location of this script.
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+SCRIPT_NAME="$( basename "${BASH_SOURCE[0]}" )"
+
+# Specify the installation target location.
+BIN_DIR="${SCRIPT_DIR}/../tmp"
+BIN_NAME="${SCRIPT_NAME}"
+BIN_PATH="${BIN_DIR}/${BIN_NAME}"
+
+mkdir -p "${BIN_DIR}"
+
+# We need to prevent multiple parallel runs of this script from interfering with each other. Such interference would
+# cause errors like "Text file busy". We are using a file lock for that which is released when the script exits.
+exec 200>"${BIN_PATH}.lock"
+flock -x 200
+
+if [ ! -f "${BIN_PATH}" ]
+then
+  echo "Installing ${BIN_PATH}"
+  GOBIN="${BIN_DIR}" go install github.com/onsi/ginkgo/v2/ginkgo@${VERSION}
+fi
+
+exec "${BIN_PATH}" "$@"

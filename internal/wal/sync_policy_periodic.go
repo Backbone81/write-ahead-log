@@ -20,7 +20,7 @@ type SyncPolicyPeriodic struct {
 	unsyncedEntryCount int
 }
 
-// SyncPolicyPeriodic implements SyncPolicy
+// SyncPolicyPeriodic implements SyncPolicy.
 var _ SyncPolicy = (*SyncPolicyPeriodic)(nil)
 
 func NewSyncPolicyPeriodic(file *os.File, syncAfterEntryCount int, syncEvery time.Duration) *SyncPolicyPeriodic {
@@ -83,7 +83,6 @@ func (s *SyncPolicyPeriodic) periodicSync() {
 	defer s.mutex.Unlock()
 
 	if err := s.syncNow(); err != nil {
-		// TODO: transport error messages to user
 		return
 	}
 }

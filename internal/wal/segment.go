@@ -5,14 +5,12 @@ import (
 	"unsafe"
 )
 
-var (
-	Endian = detectNativeEndian()
-)
+var Endian = detectNativeEndian()
 
 // detectNativeEndian determines the native endianness of the system the application is running on.
 func detectNativeEndian() binary.ByteOrder {
 	var i uint16 = 0x1
-	b := (*[2]byte)(unsafe.Pointer(&i))
+	b := (*[2]byte)(unsafe.Pointer(&i)) //nolint:gosec // There is no safe way to detect the system endianness.
 	if b[0] == 0x1 {
 		return binary.LittleEndian
 	}

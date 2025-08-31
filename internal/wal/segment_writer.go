@@ -7,6 +7,7 @@ import (
 	"os"
 	"path"
 	"sync"
+
 	"write-ahead-log/internal/utils"
 )
 
@@ -28,7 +29,7 @@ func CreateSegment(directory string, firstSequenceNumber uint64, maxSegmentSize 
 		return nil, fmt.Errorf("removing the segment file %q: %w", newSegmentFilePath, err)
 	}
 
-	segmentFile, err := os.OpenFile(newSegmentFilePath, os.O_RDWR|os.O_CREATE, 0664)
+	segmentFile, err := os.OpenFile(newSegmentFilePath, os.O_RDWR|os.O_CREATE, 0o664) //nolint:gosec // We can not validate paths in a library.
 	if err != nil {
 		return nil, fmt.Errorf("creating the segment file %q: %w", newSegmentFilePath, err)
 	}

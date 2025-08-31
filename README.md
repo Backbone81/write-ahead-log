@@ -21,3 +21,18 @@ It supports the following features:
 - Sync policy "grouped" for flushing all entries synchronously which are written within a defined time window after
   the first pending entry. This amortizes the cost of flushing data to stable storage over multiple concurrent writes.
   It guarantees that the entry was flushed after the call to the writer returns.
+
+## TODOs
+
+- Extend checksum over all data of the entry (length, timestamp, sequence number) and not only the data. This fixes
+  issues with detecting unwritten entries.
+- Make the entry length configurable
+- Make the entry checksum configurable
+- Batch write entries to a bytes.Buffer and do a single write before the sync to improve performance
+- Allow optional timestamps for each entry
+- Allow optional sequence numbers for each entry
+- Collect metrics about what is happening with the wal
+- Find a way to transport errors from go routines to the user
+- Provide a CLI for inspecting the WAL and to do maintenance
+- Add checksum to the segment header
+- 

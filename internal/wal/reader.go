@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+
 	"write-ahead-log/internal/utils"
 )
 

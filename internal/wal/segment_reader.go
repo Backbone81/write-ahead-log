@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+
 	"write-ahead-log/internal/utils"
 )
 
@@ -61,7 +62,7 @@ func NewSegmentReader(segmentFilePath string, expectedFirstSequenceNumber uint64
 }
 
 func newSegmentReader(segmentFilePath string, expectedFirstSequenceNumber uint64) (*SegmentReader, error) {
-	segmentFile, err := os.OpenFile(segmentFilePath, os.O_RDWR, 0)
+	segmentFile, err := os.OpenFile(segmentFilePath, os.O_RDWR, 0) //nolint:gosec // We can not validate paths in a library.
 	if err != nil {
 		return nil, fmt.Errorf("opening file: %w", err)
 	}

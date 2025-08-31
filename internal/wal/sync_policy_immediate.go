@@ -7,11 +7,11 @@ import (
 
 // SyncPolicyImmediate is flushing the content of the segment to disk after every entry. This reduces the chances of
 // data loss because of hardware failure, but it has a negative impact on performance.
-type SyncPolicyImmediate struct{
+type SyncPolicyImmediate struct {
 	file *os.File
 }
 
-// SyncPolicyImmediate implements SyncPolicy
+// SyncPolicyImmediate implements SyncPolicy.
 var _ SyncPolicy = (*SyncPolicyImmediate)(nil)
 
 func (s *SyncPolicyImmediate) EntryAppended(sequenceNumber uint64) error {

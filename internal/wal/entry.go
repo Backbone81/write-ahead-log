@@ -8,19 +8,7 @@ import (
 	"io"
 )
 
-// Entry is a single entry in a segment of the write ahead log.
-type Entry struct {
-	// Length provides the length of data stored in the entry. It is expected to be identical to len(Data).
-	Length int32
-
-	// Data is the data stored in the entry. This can be arbitrary data and is application specific.
-	Data []byte
-
-	Checksum uint32
-}
-
 var (
-	ErrEntryDataSizeMismatch = errors.New("the WAL entry size does not match the data length")
 	ErrEntryChecksumMismatch = errors.New("the WAL entry checksum does not match the data")
 	ErrEntryNone             = errors.New("this is no WAL entry")
 )
@@ -70,7 +58,7 @@ func readEntry(reader io.Reader, data []byte, maxLength int64) ([]byte, error) {
 		return data, fmt.Errorf("reading WAL entry size: %w", err)
 	}
 	if maxLength < length {
-		return data, fmt.Errorf("the WAL entry data exceeds the maximum possible size")
+		return data, errors.New("the WAL entry data exceeds the maximum possible size")
 	}
 
 	// Read the data of the entry and use the data slice provided or re-allocate to a fitting size.

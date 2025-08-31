@@ -86,7 +86,6 @@ func (s *SyncPolicyGrouped) periodicSync() {
 	defer s.mutex.Unlock()
 
 	if err := s.syncNow(); err != nil {
-		// TODO: transport error messages to user
 		return
 	}
 	s.syncTimerActive = false
