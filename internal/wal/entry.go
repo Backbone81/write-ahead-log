@@ -14,22 +14,22 @@ var (
 )
 
 // WriteEntry writes the given data as a new WAL entry to the writer.
-func WriteEntry(writer io.Writer, data []byte) error {
+func WriteEntry(writer io.Writer, data []byte) (int, error) {
 	var buffer [8]byte
 	Endian.PutUint64(buffer[:], uint64(len(data)))
 	if _, err := writer.Write(buffer[:]); err != nil {
-		return fmt.Errorf("writing WAL entry size: %w", err)
+		return 0, fmt.Errorf("writing WAL entry size: %w", err)
 	}
 	if len(data) > 0 {
 		if _, err := writer.Write(data); err != nil {
-			return fmt.Errorf("writing WAL entry data: %w", err)
+			return 0, fmt.Errorf("writing WAL entry data: %w", err)
 		}
 	}
 	Endian.PutUint32(buffer[:], crc32.ChecksumIEEE(data))
 	if _, err := writer.Write(buffer[:4]); err != nil {
-		return fmt.Errorf("writing WAL entry checksum: %w", err)
+		return 0, fmt.Errorf("writing WAL entry checksum: %w", err)
 	}
-	return nil
+	return 8 + len(data) + 4, nil
 }
 
 // ReadEntry reads a single WAL entry from the reader.
@@ -43,22 +43,22 @@ func WriteEntry(writer io.Writer, data []byte) error {
 //
 // The byte slice return contains the data of the WAL entry. It will always be the value passed in through the data
 // parameter, or a newly allocated slice - even in error situations.
-func ReadEntry(reader io.Reader, data []byte, maxLength int64) ([]byte, error) {
-	data, err := readEntry(reader, data, maxLength)
+func ReadEntry(reader io.Reader, data []byte, maxLength int64) (int, []byte, error) {
+	n, data, err := readEntry(reader, data, maxLength)
 	if err != nil {
-		return nil, errors.Join(ErrEntryNone, err)
+		return 0, nil, errors.Join(ErrEntryNone, err)
 	}
-	return data, nil
+	return n, data, nil
 }
 
-func readEntry(reader io.Reader, data []byte, maxLength int64) ([]byte, error) {
+func readEntry(reader io.Reader, data []byte, maxLength int64) (int, []byte, error) {
 	// Read the length of the entry first and validate against the maximum possible length.
 	var length int64
 	if err := binary.Read(reader, Endian, &length); err != nil {
-		return data, fmt.Errorf("reading WAL entry size: %w", err)
+		return 0, data, fmt.Errorf("reading WAL entry size: %w", err)
 	}
 	if maxLength < length {
-		return data, errors.New("the WAL entry data exceeds the maximum possible size")
+		return 0, data, errors.New("the WAL entry data exceeds the maximum possible size")
 	}
 
 	// Read the data of the entry and use the data slice provided or re-allocate to a fitting size.
@@ -67,16 +67,16 @@ func readEntry(reader io.Reader, data []byte, maxLength int64) ([]byte, error) {
 	}
 	data = data[:length]
 	if _, err := io.ReadFull(reader, data); err != nil {
-		return data, fmt.Errorf("reading WAL entry data: %w", err)
+		return 0, data, fmt.Errorf("reading WAL entry data: %w", err)
 	}
 
 	// Read the checksum of the entry and validate against the real data.
 	var checksum uint32
 	if err := binary.Read(reader, Endian, &checksum); err != nil {
-		return data, fmt.Errorf("reading WAL entry checksum: %w", err)
+		return 0, data, fmt.Errorf("reading WAL entry checksum: %w", err)
 	}
 	if checksum != crc32.ChecksumIEEE(data) {
-		return data, ErrEntryChecksumMismatch
+		return 0, data, ErrEntryChecksumMismatch
 	}
-	return data, nil
+	return 8 + len(data) + 4, data, nil
 }

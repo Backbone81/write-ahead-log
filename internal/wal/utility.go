@@ -9,6 +9,8 @@ import (
 	"strings"
 )
 
+const DefaultSegmentSize = 64 * 1024 * 1024
+
 // segmentFileNamePattern is the file pattern all segment files need to follow.
 var segmentFileNamePattern = regexp.MustCompile(`\d{20}\.wal`)
 

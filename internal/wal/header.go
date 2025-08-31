@@ -23,6 +23,8 @@ type Header struct {
 	FirstSequenceNumber uint64
 }
 
+const HeaderSize = 4 + 4 + 8
+
 var (
 	ErrHeaderInvalidMagicBytes  = errors.New("invalid Magic bytes for WAL header")
 	ErrHeaderUnsupportedVersion = errors.New("unsupported version for WAL header")
@@ -33,7 +35,7 @@ var Magic = [4]byte{'W', 'A', 'L', 0}
 
 // Write serializes the header and outputs it to the given writer.
 func (h *Header) Write(writer io.Writer) error {
-	var buffer [16]byte
+	var buffer [HeaderSize]byte
 	copy(buffer[:4], h.Magic[:])
 	Endian.PutUint32(buffer[4:8], h.Version)
 	Endian.PutUint64(buffer[8:16], h.FirstSequenceNumber)
@@ -45,7 +47,7 @@ func (h *Header) Write(writer io.Writer) error {
 
 // Read deserializes the header from the given reader. It validates the header after reading.
 func (h *Header) Read(reader io.Reader) error {
-	var buffer [16]byte
+	var buffer [HeaderSize]byte
 	if _, err := io.ReadFull(reader, buffer[:]); err != nil {
 		return fmt.Errorf("reading WAL header: %w", err)
 	}

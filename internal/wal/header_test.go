@@ -19,7 +19,7 @@ var _ = Describe("Header", func() {
 			FirstSequenceNumber: 7,
 		}
 		Expect(header.Write(&buffer)).To(Succeed())
-		Expect(buffer.Len()).To(Equal(16))
+		Expect(buffer.Len()).To(Equal(wal.HeaderSize))
 	})
 
 	It("should read the header", func() {
