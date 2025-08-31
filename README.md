@@ -24,11 +24,8 @@ It supports the following features:
 
 ## TODOs
 
-- Extend checksum over all data of the entry (length, timestamp, sequence number) and not only the data. This fixes
-  issues with detecting unwritten entries.
 - Make the entry length configurable
 - Make the entry checksum configurable
-- Batch write entries to a bytes.Buffer and do a single write before the sync to improve performance
 - Allow optional timestamps for each entry
 - Allow optional sequence numbers for each entry
 - Collect metrics about what is happening with the wal

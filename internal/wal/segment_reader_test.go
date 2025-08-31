@@ -79,7 +79,7 @@ var _ = Describe("SegmentReader", func() {
 		Expect(reader.Err()).To(MatchError(io.EOF))
 	})
 
-	PIt("should read a pre-allocated segment file", func() {
+	It("should read a pre-allocated segment file", func() {
 		writer, err := wal.CreateSegment(dir, 7, wal.DefaultSegmentSize, &wal.SyncPolicyNone{})
 		Expect(err).ToNot(HaveOccurred())
 		Expect(writer.Close()).To(Succeed())

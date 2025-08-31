@@ -46,7 +46,7 @@ var _ = Describe("Entry", func() {
 		Expect(wal.ReadEntry(&buffer, nil, int64(buffer.Len()))).Error().To(MatchError(wal.ErrEntryNone))
 	})
 
-	PIt("should fail when reading a zero only data entry", func() {
+	It("should fail when reading a zero only data entry", func() {
 		// This test simulates the situation where a segment is only partially filled and the rest of the file which
 		// was pre-allocated consists of null bytes.
 		buffer := bytes.NewBuffer(make([]byte, 1024))

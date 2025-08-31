@@ -1,6 +1,7 @@
 package wal
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"io"
@@ -18,6 +19,9 @@ type SegmentWriter struct {
 
 	// The file the writer is writing data to.
 	file *os.File
+
+	// This buffer is used to combine multiple individual file write commands into a single one to improve performance.
+	buffer *bytes.Buffer
 
 	// The sequence number the next entry will receive.
 	nextSequenceNumber uint64
@@ -88,6 +92,7 @@ func newSegmentWriterFromFile(segmentFile *os.File, nextSequenceNumber uint64, s
 		nextSequenceNumber: nextSequenceNumber,
 		offset:             offset,
 		syncPolicy:         syncPolicy,
+		buffer:             bytes.NewBuffer(make([]byte, 0, 1024)),
 	}, nil
 }
 
@@ -103,8 +108,12 @@ func (w *SegmentWriter) Offset() int64 {
 
 // AppendEntry adds the given entry to the segment.
 func (w *SegmentWriter) AppendEntry(data []byte) error {
-	n, err := WriteEntry(w.file, data)
+	w.buffer.Reset()
+	n, err := WriteEntry(w.buffer, data)
 	if err != nil {
+		return fmt.Errorf("writing entry to buffer: %w", err)
+	}
+	if _, err := w.file.Write(w.buffer.Bytes()); err != nil {
 		return fmt.Errorf("writing entry to segment file: %w", err)
 	}
 	sequenceNumber := w.nextSequenceNumber
