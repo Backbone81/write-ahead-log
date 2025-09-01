@@ -1,7 +1,6 @@
 package wal
 
 import (
-	"bytes"
 	"encoding/binary"
 	"errors"
 	"fmt"
@@ -9,30 +8,7 @@ import (
 	"io"
 )
 
-var (
-	ErrEntryNone             = errors.New("this is no WAL entry")
-)
-
-// WriteEntry writes the given data as a new WAL entry to the writer.
-func WriteEntry(writer *bytes.Buffer, data []byte) (int, error) {
-	startIndex := writer.Len()
-
-	var buffer [8]byte
-	Endian.PutUint64(buffer[:], uint64(len(data)))
-	if _, err := writer.Write(buffer[:]); err != nil {
-		return 0, fmt.Errorf("writing WAL entry size: %w", err)
-	}
-	if len(data) > 0 {
-		if _, err := writer.Write(data); err != nil {
-			return 0, fmt.Errorf("writing WAL entry data: %w", err)
-		}
-	}
-	Endian.PutUint32(buffer[:], crc32.ChecksumIEEE(writer.Bytes()[startIndex:writer.Len()]))
-	if _, err := writer.Write(buffer[:4]); err != nil {
-		return 0, fmt.Errorf("writing WAL entry checksum: %w", err)
-	}
-	return writer.Len() - startIndex, nil
-}
+var ErrEntryNone = errors.New("this is no WAL entry")
 
 // ReadEntry reads a single WAL entry from the reader.
 //
@@ -55,11 +31,11 @@ func ReadEntry(reader io.Reader, data []byte, maxLength int64) (int, []byte, err
 
 func readEntry(reader io.Reader, data []byte, maxLength int64) (int, []byte, error) {
 	// Read the length of the entry first and validate against the maximum possible length.
-	var lengthBuffer [8]byte
+	var lengthBuffer [4]byte
 	if _, err := io.ReadFull(reader, lengthBuffer[:]); err != nil {
 		return 0, data, fmt.Errorf("reading WAL entry size: %w", err)
 	}
-	length := int64(Endian.Uint64(lengthBuffer[:])) //nolint:gosec
+	length := int64(Endian.Uint32(lengthBuffer[:]))
 
 	hash := crc32.NewIEEE()
 	if _, err := hash.Write(lengthBuffer[:]); err != nil {

@@ -15,10 +15,10 @@ type Header struct {
 
 	// The version of the segment file format to use. This allows us to evolve the header and the file format over
 	// time if necessary.
-	Version uint32
+	Version uint16
 
 	// Describes the way the entry length is encoded in the segment file.
-	EntryLengthType EntryLengthEncoding
+	EntryLengthEncoding EntryLengthEncoding
 
 	// Describes the way the entry checksum is encoded in the segment file.
 	EntryChecksumType EntryChecksumType
@@ -43,7 +43,9 @@ var Magic = [4]byte{'W', 'A', 'L', 0}
 func (h *Header) Write(writer io.Writer) error {
 	var buffer [HeaderSize]byte
 	copy(buffer[:4], h.Magic[:])
-	Endian.PutUint32(buffer[4:8], h.Version)
+	Endian.PutUint16(buffer[4:6], h.Version)
+	buffer[6] = byte(h.EntryLengthEncoding)
+	buffer[7] = byte(h.EntryChecksumType)
 	Endian.PutUint64(buffer[8:16], h.FirstSequenceNumber)
 	if _, err := writer.Write(buffer[:]); err != nil {
 		return fmt.Errorf("writing WAL header: %w", err)
@@ -60,9 +62,11 @@ func (h *Header) Read(reader io.Reader) error {
 	if _, err := binary.Decode(buffer[0:4], Endian, h.Magic[:]); err != nil {
 		return fmt.Errorf("decoding WAL header Magic bytes: %w", err)
 	}
-	if _, err := binary.Decode(buffer[4:8], Endian, &h.Version); err != nil {
+	if _, err := binary.Decode(buffer[4:6], Endian, &h.Version); err != nil {
 		return fmt.Errorf("decoding WAL header version: %w", err)
 	}
+	h.EntryLengthEncoding = EntryLengthEncoding(buffer[6])
+	h.EntryChecksumType = EntryChecksumType(buffer[7])
 	if _, err := binary.Decode(buffer[8:16], Endian, &h.FirstSequenceNumber); err != nil {
 		return fmt.Errorf("decoding WAL header sequence number: %w", err)
 	}

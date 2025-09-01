@@ -77,7 +77,7 @@ func WriteEntryLengthUint16(writer io.Writer, buffer []byte, length uint64) erro
 		return ErrEntryLengthOverflow
 	}
 
-	Endian.PutUint16(buffer[:2], uint16(length))
+	Endian.PutUint16(buffer[:2], uint16(length)) //nolint:gosec // We already checked the range.
 	if _, err := writer.Write(buffer[:2]); err != nil {
 		return fmt.Errorf("writing WAL entry length: %w", err)
 	}
@@ -101,7 +101,7 @@ func WriteEntryLengthUint32(writer io.Writer, buffer []byte, length uint64) erro
 		return ErrEntryLengthOverflow
 	}
 
-	Endian.PutUint32(buffer[:4], uint32(length))
+	Endian.PutUint32(buffer[:4], uint32(length)) //nolint:gosec // We already checked the range.
 	if _, err := writer.Write(buffer[:4]); err != nil {
 		return fmt.Errorf("writing WAL entry length: %w", err)
 	}

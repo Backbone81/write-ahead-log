@@ -16,6 +16,8 @@ var _ = Describe("Header", func() {
 		header := wal.Header{
 			Magic:               wal.Magic,
 			Version:             1,
+			EntryLengthEncoding: wal.DefaultEntryLengthEncoding,
+			EntryChecksumType:   wal.DefaultEntryChecksumType,
 			FirstSequenceNumber: 7,
 		}
 		Expect(header.Write(&buffer)).To(Succeed())
@@ -27,6 +29,8 @@ var _ = Describe("Header", func() {
 		wantHeader := wal.Header{
 			Magic:               wal.Magic,
 			Version:             1,
+			EntryLengthEncoding: wal.DefaultEntryLengthEncoding,
+			EntryChecksumType:   wal.DefaultEntryChecksumType,
 			FirstSequenceNumber: 7,
 		}
 		Expect(wantHeader.Write(&buffer)).To(Succeed())
@@ -48,6 +52,8 @@ var _ = Describe("Header", func() {
 		header := wal.Header{
 			Magic:               wal.Magic,
 			Version:             1,
+			EntryLengthEncoding: wal.DefaultEntryLengthEncoding,
+			EntryChecksumType:   wal.DefaultEntryChecksumType,
 			FirstSequenceNumber: 7,
 		}
 		Expect(header.Write(&buffer)).To(Succeed())
@@ -61,6 +67,8 @@ var _ = Describe("Header", func() {
 		header := wal.Header{
 			Magic:               wal.Magic,
 			Version:             1,
+			EntryLengthEncoding: wal.DefaultEntryLengthEncoding,
+			EntryChecksumType:   wal.DefaultEntryChecksumType,
 			FirstSequenceNumber: 7,
 		}
 		Expect(header.Write(&buffer)).To(Succeed())
@@ -75,6 +83,8 @@ func BenchmarkHeader_Write(b *testing.B) {
 	header := wal.Header{
 		Magic:               wal.Magic,
 		Version:             1,
+		EntryLengthEncoding: wal.DefaultEntryLengthEncoding,
+		EntryChecksumType:   wal.DefaultEntryChecksumType,
 		FirstSequenceNumber: 0,
 	}
 	if err := header.Validate(); err != nil {
@@ -94,6 +104,8 @@ func BenchmarkHeader_Read(b *testing.B) {
 	header := wal.Header{
 		Magic:               wal.Magic,
 		Version:             1,
+		EntryLengthEncoding: wal.DefaultEntryLengthEncoding,
+		EntryChecksumType:   wal.DefaultEntryChecksumType,
 		FirstSequenceNumber: 0,
 	}
 	for range b.N {

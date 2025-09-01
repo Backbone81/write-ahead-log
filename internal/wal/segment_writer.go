@@ -20,8 +20,11 @@ type SegmentWriter struct {
 	// The file the writer is writing data to.
 	file *os.File
 
+	// The header of the segment file.
+	header Header
+
 	// This buffer is used to combine multiple individual file write commands into a single one to improve performance.
-	buffer *bytes.Buffer
+	writeBuffer *bytes.Buffer
 
 	// The sequence number the next entry will receive.
 	nextSequenceNumber uint64
@@ -32,8 +35,15 @@ type SegmentWriter struct {
 	// The policy describing how data is flushed to disk.
 	syncPolicy SyncPolicy
 
-	entryLengthWriter   EntryLengthWriter
+	// The writer to encode the length of an entry.
+	entryLengthWriter EntryLengthWriter
+
+	// The writer to calculate and write the checksum.
 	entryChecksumWriter EntryChecksumWriter
+
+	// This is a temporary buffer for converting integers into slices of bytes. This helps us with reducing the amount
+	// of memory allocations.
+	conversionBuffer [max(MaxLengthBufferLen, MaxChecksumBufferLen)]byte
 }
 
 // CreateSegment creates a new segment file in the given directory. It will create the new file with the file extension
@@ -63,12 +73,14 @@ func CreateSegment(directory string, firstSequenceNumber uint64, segmentSize int
 	}
 
 	// Write the header to the segment file and flush the content to stable storage.
-	walHeader := Header{
+	segmentHeader := Header{
 		Magic:               Magic,
 		Version:             1,
+		EntryLengthEncoding: DefaultEntryLengthEncoding,
+		EntryChecksumType:   DefaultEntryChecksumType,
 		FirstSequenceNumber: firstSequenceNumber,
 	}
-	if err := walHeader.Write(segmentFile); err != nil {
+	if err := segmentHeader.Write(segmentFile); err != nil {
 		return nil, fmt.Errorf("writing header to segment file %q: %w", newSegmentFilePath, err)
 	}
 	if err := segmentFile.Sync(); err != nil {
@@ -80,23 +92,42 @@ func CreateSegment(directory string, firstSequenceNumber uint64, segmentSize int
 	if err := os.Rename(newSegmentFilePath, segmentFilePath); err != nil {
 		return nil, fmt.Errorf("renaming the segment file from %q to %q: %w", newSegmentFilePath, segmentFilePath, err)
 	}
-	return newSegmentWriterFromFile(segmentFile, firstSequenceNumber, syncPolicy)
+	return newSegmentWriterFromFile(segmentFile, segmentHeader, firstSequenceNumber, syncPolicy)
 }
 
 // newSegmentWriterFromFile creates a SegmentWriter from a file which is already open.
-func newSegmentWriterFromFile(segmentFile *os.File, nextSequenceNumber uint64, syncPolicy SyncPolicy) (*SegmentWriter, error) {
+func newSegmentWriterFromFile(segmentFile *os.File, header Header, nextSequenceNumber uint64, syncPolicy SyncPolicy) (*SegmentWriter, error) {
 	offset, err := segmentFile.Seek(0, io.SeekCurrent)
 	if err != nil {
 		return nil, fmt.Errorf("reading file position: %w", err)
 	}
 
+	entryLengthWriter, err := GetEntryLengthWriter(header.EntryLengthEncoding)
+	if err != nil {
+		return nil, err
+	}
+
+	entryChecksumWriter, err := GetEntryChecksumWriter(header.EntryChecksumType)
+	if err != nil {
+		return nil, err
+	}
+
 	return &SegmentWriter{
-		file:               segmentFile,
-		nextSequenceNumber: nextSequenceNumber,
-		offset:             offset,
-		syncPolicy:         syncPolicy,
-		buffer:             bytes.NewBuffer(make([]byte, 0, 1024)),
+		file:                segmentFile,
+		header:              header,
+		writeBuffer:         bytes.NewBuffer(make([]byte, 0, 4*1024)),
+		nextSequenceNumber:  nextSequenceNumber,
+		offset:              offset,
+		syncPolicy:          syncPolicy,
+		entryLengthWriter:   entryLengthWriter,
+		entryChecksumWriter: entryChecksumWriter,
+		conversionBuffer:    [10]byte{},
 	}, nil
+}
+
+// Header returns the segment file header.
+func (w *SegmentWriter) Header() Header {
+	return w.header
 }
 
 // NextSequenceNumber returns the sequence number the next entry will receive.
@@ -111,17 +142,25 @@ func (w *SegmentWriter) Offset() int64 {
 
 // AppendEntry adds the given entry to the segment.
 func (w *SegmentWriter) AppendEntry(data []byte) error {
-	w.buffer.Reset()
-	n, err := WriteEntry(w.buffer, data)
-	if err != nil {
-		return fmt.Errorf("writing entry to buffer: %w", err)
+	w.writeBuffer.Reset()
+	if err := w.entryLengthWriter(w.writeBuffer, w.conversionBuffer[:], uint64(len(data))); err != nil {
+		return err
 	}
-	if _, err := w.file.Write(w.buffer.Bytes()); err != nil {
+	if len(data) > 0 {
+		if _, err := w.writeBuffer.Write(data); err != nil {
+			return err
+		}
+	}
+	if err := w.entryChecksumWriter(w.writeBuffer, w.conversionBuffer[:], w.writeBuffer.Bytes()); err != nil {
+		return err
+	}
+
+	if _, err := w.file.Write(w.writeBuffer.Bytes()); err != nil {
 		return fmt.Errorf("writing entry to segment file: %w", err)
 	}
 	sequenceNumber := w.nextSequenceNumber
 	w.nextSequenceNumber++
-	w.offset += int64(n)
+	w.offset += int64(w.writeBuffer.Len())
 
 	if err := w.syncPolicy.EntryAppended(sequenceNumber); err != nil {
 		return fmt.Errorf("flushing entry to segment file: %w", err)

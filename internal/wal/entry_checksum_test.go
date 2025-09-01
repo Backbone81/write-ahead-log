@@ -5,10 +5,11 @@ import (
 	"fmt"
 	"io"
 	"testing"
-	"write-ahead-log/internal/wal"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+
+	"write-ahead-log/internal/wal"
 )
 
 var _ = Describe("EntryChecksum", func() {

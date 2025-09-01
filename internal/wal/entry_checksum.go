@@ -10,7 +10,7 @@ import (
 
 var (
 	ErrEntryChecksumTypeUnsupported = errors.New("unsupported entry checksum type")
-	ErrEntryChecksumMismatch = errors.New("entry checksum mismatch")
+	ErrEntryChecksumMismatch        = errors.New("entry checksum mismatch")
 )
 
 // MaxChecksumBufferLen is the site of the buffer which is big enough for all supported checksum types.

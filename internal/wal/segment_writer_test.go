@@ -74,11 +74,11 @@ var _ = Describe("SegmentWriter", func() {
 
 		Expect(writer.Offset()).To(Equal(int64(wal.HeaderSize)))
 		Expect(writer.AppendEntry([]byte("foo"))).To(Succeed())
-		Expect(writer.Offset()).To(Equal(int64(wal.HeaderSize + 1*(8+3+4))))
+		Expect(writer.Offset()).To(Equal(int64(wal.HeaderSize + 1*(4+3+4))))
 		Expect(writer.AppendEntry([]byte("foo"))).To(Succeed())
-		Expect(writer.Offset()).To(Equal(int64(wal.HeaderSize + 2*(8+3+4))))
+		Expect(writer.Offset()).To(Equal(int64(wal.HeaderSize + 2*(4+3+4))))
 		Expect(writer.AppendEntry([]byte("foo"))).To(Succeed())
-		Expect(writer.Offset()).To(Equal(int64(wal.HeaderSize + 3*(8+3+4))))
+		Expect(writer.Offset()).To(Equal(int64(wal.HeaderSize + 3*(4+3+4))))
 	})
 })
 

@@ -109,7 +109,7 @@ func newSegmentReaderFromFile(segmentFile *os.File, firstSequenceNumber uint64) 
 		nextSequenceNumber: firstSequenceNumber,
 		value: SegmentReaderValue{
 			// Pre-allocate the data slice to reduce the number of allocations.
-			Data: make([]byte, 0, 1024),
+			Data: make([]byte, 0, 4*1024),
 		},
 		err: nil,
 	}, nil
@@ -176,7 +176,7 @@ func (r *SegmentReader) ToWriter(syncPolicy SyncPolicy) (*SegmentWriter, error) 
 		return nil, errors.New("segment needs to be read until the last entry is reached")
 	}
 
-	segmentWriter, err := newSegmentWriterFromFile(r.file, r.nextSequenceNumber, syncPolicy)
+	segmentWriter, err := newSegmentWriterFromFile(r.file, r.header, r.nextSequenceNumber, syncPolicy)
 	if err != nil {
 		return nil, err
 	}
