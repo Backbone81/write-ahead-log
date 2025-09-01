@@ -82,33 +82,41 @@ var _ = Describe("SegmentWriter", func() {
 	})
 })
 
-func BenchmarkSegmentWriter_AppendEntry_1000x(b *testing.B) {
-	for _, i := range []int{0, 1, 2, 4, 8} {
+func BenchmarkSegmentWriter_AppendEntry(b *testing.B) {
+	for _, i := range []int{0, 1, 2, 4, 8, 16} {
+		data := make([]byte, i*1024)
+		segmentWriter, err := wal.NewSegmentWriter("in-memory", &SegmentWriterFileDiscard{}, wal.Header{
+			Magic:               wal.Magic,
+			Version:             1,
+			EntryLengthEncoding: wal.DefaultEntryLengthEncoding,
+			EntryChecksumType:   wal.DefaultEntryChecksumType,
+			FirstSequenceNumber: 0,
+		}, 0, 0, &wal.SyncPolicyNone{})
+		if err != nil {
+			b.Fatal(err)
+		}
 		b.Run(fmt.Sprintf("%d KB data", i), func(b *testing.B) {
-			for range b.N {
-				writeSegmentWith1000Entries(b, i*1024)
+			for b.Loop() {
+				if err := segmentWriter.AppendEntry(data); err != nil {
+					b.Fatal(err)
+				}
 			}
 		})
 	}
 }
 
-func writeSegmentWith1000Entries(b *testing.B, dataSize int) {
-	b.Helper()
-	b.StopTimer()
+// SegmentWriterFileDiscard provides a stub for a segment file which discards all data. It allows us to run large scale
+// benchmarks without filling up the disk or memory.
+type SegmentWriterFileDiscard struct{}
 
-	writer, err := wal.CreateSegment(b.TempDir(), 0, wal.DefaultSegmentSize, &wal.SyncPolicyNone{})
-	Expect(err).ToNot(HaveOccurred())
-	defer func() {
-		Expect(writer.Close()).To(Succeed())
-	}()
+func (s *SegmentWriterFileDiscard) Write(p []byte) (n int, err error) {
+	return len(p), nil
+}
 
-	data := make([]byte, dataSize)
+func (s *SegmentWriterFileDiscard) Close() error {
+	return nil
+}
 
-	b.StartTimer()
-	for range 1000 {
-		if err := writer.AppendEntry(data); err != nil {
-			b.Fatal(err)
-		}
-	}
-	b.StopTimer()
+func (s *SegmentWriterFileDiscard) Sync() error {
+	return nil
 }

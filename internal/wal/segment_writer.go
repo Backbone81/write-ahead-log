@@ -11,14 +11,22 @@ import (
 	"write-ahead-log/internal/utils"
 )
 
+type SegmentWriterFile interface {
+	io.WriteCloser
+	Sync() error
+}
+
 // SegmentWriter provides functionality for writing to a single segment file.
 //
 // Instances of SegmentWriter are NOT safe to use concurrently. You need to provide external synchronization.
 type SegmentWriter struct {
 	noCopy utils.NoCopy
 
+	// The path to the file the writer is writing to.
+	filePath string
+
 	// The file the writer is writing data to.
-	file *os.File
+	file SegmentWriterFile
 
 	// The header of the segment file.
 	header Header
@@ -43,7 +51,7 @@ type SegmentWriter struct {
 
 	// This is a temporary buffer for converting integers into slices of bytes. This helps us with reducing the amount
 	// of memory allocations.
-	conversionBuffer [max(MaxLengthBufferLen, MaxChecksumBufferLen)]byte
+	scratchBuffer [max(MaxLengthBufferLen, MaxChecksumBufferLen)]byte
 }
 
 // CreateSegment creates a new segment file in the given directory. It will create the new file with the file extension
@@ -92,37 +100,44 @@ func CreateSegment(directory string, firstSequenceNumber uint64, segmentSize int
 	if err := os.Rename(newSegmentFilePath, segmentFilePath); err != nil {
 		return nil, fmt.Errorf("renaming the segment file from %q to %q: %w", newSegmentFilePath, segmentFilePath, err)
 	}
-	return newSegmentWriterFromFile(segmentFile, segmentHeader, firstSequenceNumber, syncPolicy)
-}
 
-// newSegmentWriterFromFile creates a SegmentWriter from a file which is already open.
-func newSegmentWriterFromFile(segmentFile *os.File, header Header, nextSequenceNumber uint64, syncPolicy SyncPolicy) (*SegmentWriter, error) {
 	offset, err := segmentFile.Seek(0, io.SeekCurrent)
 	if err != nil {
 		return nil, fmt.Errorf("reading file position: %w", err)
 	}
 
-	entryLengthWriter, err := GetEntryLengthWriter(header.EntryLengthEncoding)
+	return NewSegmentWriter(segmentFilePath, segmentFile, segmentHeader, offset, firstSequenceNumber, syncPolicy)
+}
+
+// NewSegmentWriter creates a SegmentWriter from a file which is already open.
+func NewSegmentWriter(filePath string, segmentFile SegmentWriterFile, segmentHeader Header, offset int64, nextSequenceNumber uint64, syncPolicy SyncPolicy) (*SegmentWriter, error) {
+	entryLengthWriter, err := GetEntryLengthWriter(segmentHeader.EntryLengthEncoding)
 	if err != nil {
 		return nil, err
 	}
 
-	entryChecksumWriter, err := GetEntryChecksumWriter(header.EntryChecksumType)
+	entryChecksumWriter, err := GetEntryChecksumWriter(segmentHeader.EntryChecksumType)
 	if err != nil {
 		return nil, err
 	}
 
 	return &SegmentWriter{
+		filePath:            filePath,
 		file:                segmentFile,
-		header:              header,
+		header:              segmentHeader,
 		writeBuffer:         bytes.NewBuffer(make([]byte, 0, 4*1024)),
 		nextSequenceNumber:  nextSequenceNumber,
 		offset:              offset,
 		syncPolicy:          syncPolicy,
 		entryLengthWriter:   entryLengthWriter,
 		entryChecksumWriter: entryChecksumWriter,
-		conversionBuffer:    [10]byte{},
+		scratchBuffer:       [10]byte{},
 	}, nil
+}
+
+// FilePath returns the file path of the file this writer is writing to.
+func (w *SegmentWriter) FilePath() string {
+	return w.filePath
 }
 
 // Header returns the segment file header.
@@ -143,7 +158,7 @@ func (w *SegmentWriter) Offset() int64 {
 // AppendEntry adds the given entry to the segment.
 func (w *SegmentWriter) AppendEntry(data []byte) error {
 	w.writeBuffer.Reset()
-	if err := w.entryLengthWriter(w.writeBuffer, w.conversionBuffer[:], uint64(len(data))); err != nil {
+	if err := w.entryLengthWriter(w.writeBuffer, w.scratchBuffer[:], uint64(len(data))); err != nil {
 		return err
 	}
 	if len(data) > 0 {
@@ -151,7 +166,7 @@ func (w *SegmentWriter) AppendEntry(data []byte) error {
 			return err
 		}
 	}
-	if err := w.entryChecksumWriter(w.writeBuffer, w.conversionBuffer[:], w.writeBuffer.Bytes()); err != nil {
+	if err := w.entryChecksumWriter(w.writeBuffer, w.scratchBuffer[:], w.writeBuffer.Bytes()); err != nil {
 		return err
 	}
 

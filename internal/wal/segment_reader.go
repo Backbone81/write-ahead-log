@@ -176,7 +176,7 @@ func (r *SegmentReader) ToWriter(syncPolicy SyncPolicy) (*SegmentWriter, error) 
 		return nil, errors.New("segment needs to be read until the last entry is reached")
 	}
 
-	segmentWriter, err := newSegmentWriterFromFile(r.file, r.header, r.nextSequenceNumber, syncPolicy)
+	segmentWriter, err := NewSegmentWriter(r.file.Name(), r.file, r.header, r.currOffset, r.nextSequenceNumber, syncPolicy)
 	if err != nil {
 		return nil, err
 	}

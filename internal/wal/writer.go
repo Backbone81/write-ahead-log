@@ -39,7 +39,7 @@ func (w *Writer) Rollover(syncPolicy SyncPolicy) error {
 		return err
 	}
 
-	nextSegmentWriter, err := CreateSegment(path.Dir(w.segmentWriter.file.Name()), w.segmentWriter.nextSequenceNumber, w.maxSegmentSize, syncPolicy)
+	nextSegmentWriter, err := CreateSegment(path.Dir(w.segmentWriter.FilePath()), w.segmentWriter.NextSequenceNumber(), w.maxSegmentSize, syncPolicy)
 	if err != nil {
 		return err
 	}
