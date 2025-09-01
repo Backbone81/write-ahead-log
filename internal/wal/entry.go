@@ -10,7 +10,6 @@ import (
 )
 
 var (
-	ErrEntryChecksumMismatch = errors.New("the WAL entry checksum does not match the data")
 	ErrEntryNone             = errors.New("this is no WAL entry")
 )
 

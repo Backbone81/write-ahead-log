@@ -103,7 +103,7 @@ func WriteEntryLengthUint32(writer io.Writer, buffer []byte, length uint64) erro
 
 	Endian.PutUint32(buffer[:4], uint32(length))
 	if _, err := writer.Write(buffer[:4]); err != nil {
-		return fmt.Errorf("writing entry length: %w", err)
+		return fmt.Errorf("writing WAL entry length: %w", err)
 	}
 	return nil
 }
@@ -122,7 +122,7 @@ func ReadEntryLengthUint32(reader io.Reader, buffer []byte) (uint64, error) {
 func WriteEntryLengthUint64(writer io.Writer, buffer []byte, length uint64) error {
 	Endian.PutUint64(buffer[:8], length)
 	if _, err := writer.Write(buffer[:8]); err != nil {
-		return fmt.Errorf("writing entry length: %w", err)
+		return fmt.Errorf("writing WAL entry length: %w", err)
 	}
 	return nil
 }
@@ -141,7 +141,7 @@ func ReadEntryLengthUint64(reader io.Reader, buffer []byte) (uint64, error) {
 func WriteEntryLengthUvarint(writer io.Writer, buffer []byte, length uint64) error {
 	n := binary.PutUvarint(buffer[:binary.MaxVarintLen64], length)
 	if _, err := writer.Write(buffer[:n]); err != nil {
-		return fmt.Errorf("writing entry length: %w", err)
+		return fmt.Errorf("writing WAL entry length: %w", err)
 	}
 	return nil
 }

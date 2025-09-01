@@ -8,7 +8,10 @@ import (
 	"io"
 )
 
-var ErrEntryChecksumTypeUnsupported = errors.New("unsupported entry checksum type")
+var (
+	ErrEntryChecksumTypeUnsupported = errors.New("unsupported entry checksum type")
+	ErrEntryChecksumMismatch = errors.New("entry checksum mismatch")
+)
 
 // MaxChecksumBufferLen is the site of the buffer which is big enough for all supported checksum types.
 const MaxChecksumBufferLen = crc64.Size
@@ -67,19 +70,25 @@ func WriteEntryChecksumCrc32(writer io.Writer, buffer []byte, data []byte) error
 	return nil
 }
 
+// ReadEntryChecksumCrc32 reads the checksum from the reader as uint32.
+// The buffer is required to avoid allocations and should be big enough to hold the checksum temporarily.
+// The data is the data to calculate the checksum over and compare to the checksum which was read.
 func ReadEntryChecksumCrc32(reader io.Reader, buffer []byte, data []byte) error {
 	if _, err := io.ReadFull(reader, buffer[:4]); err != nil {
 		return fmt.Errorf("reading entry checksum: %w", err)
 	}
 	checksum := Endian.Uint32(buffer[:4])
 	if checksum != crc32.Checksum(data, crc32ChecksumTable) {
-		return errors.New("WAL entry checksum mismatch")
+		return ErrEntryChecksumMismatch
 	}
 	return nil
 }
 
 var crc64ChecksumTable = crc64.MakeTable(crc64.ISO)
 
+// WriteEntryChecksumCrc64 writes the checksum to the writer as uint64.
+// The buffer is required to avoid allocations and should be big enough to hold the checksum temporarily.
+// The data is the data to calculate the checksum over.
 func WriteEntryChecksumCrc64(writer io.Writer, buffer []byte, data []byte) error {
 	Endian.PutUint64(buffer[:8], crc64.Checksum(data, crc64ChecksumTable))
 	if _, err := writer.Write(buffer[:8]); err != nil {
@@ -88,13 +97,16 @@ func WriteEntryChecksumCrc64(writer io.Writer, buffer []byte, data []byte) error
 	return nil
 }
 
+// ReadEntryChecksumCrc64 reads the checksum from the reader as uint64.
+// The buffer is required to avoid allocations and should be big enough to hold the checksum temporarily.
+// The data is the data to calculate the checksum over and compare to the checksum which was read.
 func ReadEntryChecksumCrc64(reader io.Reader, buffer []byte, data []byte) error {
 	if _, err := io.ReadFull(reader, buffer[:8]); err != nil {
 		return fmt.Errorf("reading entry checksum: %w", err)
 	}
 	checksum := Endian.Uint64(buffer[:8])
 	if checksum != crc64.Checksum(data, crc64ChecksumTable) {
-		return errors.New("WAL entry checksum mismatch")
+		return ErrEntryChecksumMismatch
 	}
 	return nil
 }
