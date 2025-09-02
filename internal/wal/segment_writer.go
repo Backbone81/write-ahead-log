@@ -127,7 +127,6 @@ func NewSegmentWriter(segmentFile SegmentWriterFile, segmentHeader Header, offse
 		nextSequenceNumber:  nextSequenceNumber,
 		entryLengthWriter:   entryLengthWriter,
 		entryChecksumWriter: entryChecksumWriter,
-		scratchBuffer:       [10]byte{},
 		writeBuffer:         bytes.NewBuffer(make([]byte, 0, 4*1024)),
 		syncPolicy:          syncPolicy,
 	}, nil
@@ -164,6 +163,7 @@ func (w *SegmentWriter) AppendEntry(data []byte) error {
 			return err
 		}
 	}
+
 	if err := w.entryChecksumWriter(w.writeBuffer, w.scratchBuffer[:], w.writeBuffer.Bytes()); err != nil {
 		return err
 	}

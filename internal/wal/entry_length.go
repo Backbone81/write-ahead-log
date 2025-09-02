@@ -43,6 +43,8 @@ func (e EntryLengthEncoding) String() string {
 	}
 }
 
+// EntryLengthEncodings provides a list of all possible length encodings. This makes writing tests over all combinations
+// easier.
 var EntryLengthEncodings = []EntryLengthEncoding{
 	EntryLengthEncodingUint16,
 	EntryLengthEncodingUint32,
