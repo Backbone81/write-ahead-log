@@ -11,8 +11,10 @@ import (
 	"write-ahead-log/internal/utils"
 )
 
+// SegmentWriterFile is an interface which needs to be implemented by the file to write to.
 type SegmentWriterFile interface {
 	io.WriteCloser
+	Name() string
 	Sync() error
 }
 
@@ -22,10 +24,7 @@ type SegmentWriterFile interface {
 type SegmentWriter struct {
 	noCopy utils.NoCopy
 
-	// The path to the file the writer is writing to.
-	filePath string
-
-	// The file the writer is writing data to.
+	// The segment file to write to.
 	file SegmentWriterFile
 
 	// The header of the segment file.
@@ -106,11 +105,11 @@ func CreateSegment(directory string, firstSequenceNumber uint64, segmentSize int
 		return nil, fmt.Errorf("reading file position: %w", err)
 	}
 
-	return NewSegmentWriter(segmentFilePath, segmentFile, segmentHeader, offset, firstSequenceNumber, syncPolicy)
+	return NewSegmentWriter(segmentFile, segmentHeader, offset, firstSequenceNumber, syncPolicy)
 }
 
 // NewSegmentWriter creates a SegmentWriter from a file which is already open.
-func NewSegmentWriter(filePath string, segmentFile SegmentWriterFile, segmentHeader Header, offset int64, nextSequenceNumber uint64, syncPolicy SyncPolicy) (*SegmentWriter, error) {
+func NewSegmentWriter(segmentFile SegmentWriterFile, segmentHeader Header, offset int64, nextSequenceNumber uint64, syncPolicy SyncPolicy) (*SegmentWriter, error) {
 	entryLengthWriter, err := GetEntryLengthWriter(segmentHeader.EntryLengthEncoding)
 	if err != nil {
 		return nil, err
@@ -122,7 +121,6 @@ func NewSegmentWriter(filePath string, segmentFile SegmentWriterFile, segmentHea
 	}
 
 	return &SegmentWriter{
-		filePath:            filePath,
 		file:                segmentFile,
 		header:              segmentHeader,
 		writeBuffer:         bytes.NewBuffer(make([]byte, 0, 4*1024)),
@@ -137,7 +135,7 @@ func NewSegmentWriter(filePath string, segmentFile SegmentWriterFile, segmentHea
 
 // FilePath returns the file path of the file this writer is writing to.
 func (w *SegmentWriter) FilePath() string {
-	return w.filePath
+	return w.file.Name()
 }
 
 // Header returns the segment file header.

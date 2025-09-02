@@ -85,7 +85,7 @@ var _ = Describe("SegmentWriter", func() {
 func BenchmarkSegmentWriter_AppendEntry(b *testing.B) {
 	for _, i := range []int{0, 1, 2, 4, 8, 16} {
 		data := make([]byte, i*1024)
-		segmentWriter, err := wal.NewSegmentWriter("in-memory", &SegmentWriterFileDiscard{}, wal.Header{
+		segmentWriter, err := wal.NewSegmentWriter(&SegmentWriterFileDiscard{}, wal.Header{
 			Magic:               wal.Magic,
 			Version:             1,
 			EntryLengthEncoding: wal.DefaultEntryLengthEncoding,
@@ -109,7 +109,10 @@ func BenchmarkSegmentWriter_AppendEntry(b *testing.B) {
 // benchmarks without filling up the disk or memory.
 type SegmentWriterFileDiscard struct{}
 
-func (s *SegmentWriterFileDiscard) Write(p []byte) (n int, err error) {
+// SegmentWriterFileDiscard implements SegmentWriterFile.
+var _ wal.SegmentWriterFile = (*SegmentWriterFileDiscard)(nil)
+
+func (s *SegmentWriterFileDiscard) Write(p []byte) (int, error) {
 	return len(p), nil
 }
 
@@ -119,4 +122,8 @@ func (s *SegmentWriterFileDiscard) Close() error {
 
 func (s *SegmentWriterFileDiscard) Sync() error {
 	return nil
+}
+
+func (s *SegmentWriterFileDiscard) Name() string {
+	return "in-memory"
 }

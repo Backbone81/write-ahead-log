@@ -10,6 +10,13 @@ import (
 	"write-ahead-log/internal/utils"
 )
 
+// SegmentReaderFile is an interface which needs to be implemented by the file to read from.
+type SegmentReaderFile interface {
+	io.ReadCloser
+	io.Seeker
+	Name() string
+}
+
 // SegmentReader provides functionality for reading a segment file of the write-ahead-log.
 //
 // It is not thread safe and should only be used in a single go routine. Otherwise, external synchronization must be
@@ -18,7 +25,7 @@ type SegmentReader struct {
 	noCopy utils.NoCopy
 
 	// The segment file to read from.
-	file *os.File
+	file SegmentReaderFile
 
 	// The file header as read from the start of the segment file.
 	header Header
@@ -176,7 +183,12 @@ func (r *SegmentReader) ToWriter(syncPolicy SyncPolicy) (*SegmentWriter, error) 
 		return nil, errors.New("segment needs to be read until the last entry is reached")
 	}
 
-	segmentWriter, err := NewSegmentWriter(r.file.Name(), r.file, r.header, r.currOffset, r.nextSequenceNumber, syncPolicy)
+	writerFile, ok := r.file.(SegmentWriterFile)
+	if !ok {
+		return nil, errors.New("the segment file does not implement the interface for writing to it")
+	}
+
+	segmentWriter, err := NewSegmentWriter(writerFile, r.header, r.currOffset, r.nextSequenceNumber, syncPolicy)
 	if err != nil {
 		return nil, err
 	}
