@@ -56,7 +56,7 @@ func BenchmarkEntryChecksumWriter(b *testing.B) {
 		for _, i := range []int{0, 1, 2, 4, 8, 16} {
 			var buffer [wal.MaxChecksumBufferLen]byte
 			data := make([]byte, i*1024)
-			b.Run(fmt.Sprintf("%s on %d KB data", entryChecksumWriter.name, i), func(b *testing.B) {
+			b.Run(fmt.Sprintf("%s on %d KB", entryChecksumWriter.name, i), func(b *testing.B) {
 				for b.Loop() {
 					if err := entryChecksumWriter.writer(io.Discard, buffer[:], data); err != nil {
 						b.Fatal(err)
@@ -97,7 +97,7 @@ func BenchmarkEntryChecksumReader(b *testing.B) {
 			// We do the interface conversion outside the loop to avoid the memory allocation of the interface
 			// conversion to skew the measurements.
 			var checksumIoReader io.Reader = checksumReader
-			b.Run(fmt.Sprintf("%s on %d KB data", entryChecksumReader.name, i), func(b *testing.B) {
+			b.Run(fmt.Sprintf("%s on %d KB", entryChecksumReader.name, i), func(b *testing.B) {
 				for b.Loop() {
 					*checksumReader = checksumReaderBackup
 					if _, err := entryChecksumReader.reader(checksumIoReader, buffer[:], data); err != nil {

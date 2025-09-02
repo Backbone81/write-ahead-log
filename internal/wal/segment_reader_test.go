@@ -144,38 +144,42 @@ var _ = Describe("SegmentReader", func() {
 })
 
 func BenchmarkSegmentReader_Next(b *testing.B) {
-	for _, i := range []int{0, 1, 2, 4, 8, 16} {
-		data := make([]byte, i*1024)
-		recorder := SegmentWriterFileRecorder{}
-		segmentWriter, err := wal.NewSegmentWriter(&recorder, wal.Header{
-			Magic:               wal.Magic,
-			Version:             1,
-			EntryLengthEncoding: wal.DefaultEntryLengthEncoding,
-			EntryChecksumType:   wal.DefaultEntryChecksumType,
-			FirstSequenceNumber: 0,
-		}, 0, 0, &wal.SyncPolicyNone{})
-		if err != nil {
-			b.Fatal(err)
-		}
-
-		if err := segmentWriter.AppendEntry(data); err != nil {
-			b.Fatal(err)
-		}
-
-		readerLoop := SegmentReaderFileLoop{
-			Data: recorder.Bytes(),
-		}
-		segmentReader, err := wal.NewSegmentReader(&readerLoop, segmentWriter.Header(), math.MaxInt64, 0, 0)
-		if err != nil {
-			b.Fatal(err)
-		}
-		b.Run(fmt.Sprintf("%d KB data", i), func(b *testing.B) {
-			for b.Loop() {
-				if !segmentReader.Next() {
-					b.Fatal("segment reader could not make progress")
+	for _, entryLengthEncoding := range wal.EntryLengthEncodings {
+		for _, entryChecksumType := range wal.EntryChecksumTypes {
+			for _, dataSize := range []int{0, 1, 2, 4, 8, 16} {
+				data := make([]byte, dataSize*1024)
+				recorder := SegmentWriterFileRecorder{}
+				segmentWriter, err := wal.NewSegmentWriter(&recorder, wal.Header{
+					Magic:               wal.Magic,
+					Version:             1,
+					EntryLengthEncoding: entryLengthEncoding,
+					EntryChecksumType:   entryChecksumType,
+					FirstSequenceNumber: 0,
+				}, 0, 0, &wal.SyncPolicyNone{})
+				if err != nil {
+					b.Fatal(err)
 				}
+
+				if err := segmentWriter.AppendEntry(data); err != nil {
+					b.Fatal(err)
+				}
+
+				readerLoop := SegmentReaderFileLoop{
+					Data: recorder.Bytes(),
+				}
+				segmentReader, err := wal.NewSegmentReader(&readerLoop, segmentWriter.Header(), math.MaxInt64, 0, 0)
+				if err != nil {
+					b.Fatal(err)
+				}
+				b.Run(fmt.Sprintf("%s %s %d KB", entryLengthEncoding, entryChecksumType, dataSize), func(b *testing.B) {
+					for b.Loop() {
+						if !segmentReader.Next() {
+							b.Fatal("segment reader could not make progress")
+						}
+					}
+				})
 			}
-		})
+		}
 	}
 }
 

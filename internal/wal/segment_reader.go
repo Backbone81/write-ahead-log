@@ -136,7 +136,7 @@ func NewSegmentReader(segmentFile SegmentReaderFile, segmentHeader Header, fileS
 		nextSequenceNumber:  nextSequenceNumber,
 		entryLengthReader:   entryLengthReader,
 		entryChecksumReader: entryChecksumReader,
-		data:                make([]byte, 0, 4*1024), // Pre-allocate the data slice to reduce the number of allocations.
+		data:                make([]byte, 4*1024), // Pre-allocate the data slice to reduce the number of allocations.
 		fileSize:            fileSize,
 	}, nil
 }

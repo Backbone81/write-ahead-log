@@ -83,25 +83,29 @@ var _ = Describe("SegmentWriter", func() {
 })
 
 func BenchmarkSegmentWriter_AppendEntry(b *testing.B) {
-	for _, i := range []int{0, 1, 2, 4, 8, 16} {
-		data := make([]byte, i*1024)
-		segmentWriter, err := wal.NewSegmentWriter(&SegmentWriterFileDiscard{}, wal.Header{
-			Magic:               wal.Magic,
-			Version:             1,
-			EntryLengthEncoding: wal.DefaultEntryLengthEncoding,
-			EntryChecksumType:   wal.DefaultEntryChecksumType,
-			FirstSequenceNumber: 0,
-		}, 0, 0, &wal.SyncPolicyNone{})
-		if err != nil {
-			b.Fatal(err)
-		}
-		b.Run(fmt.Sprintf("%d KB data", i), func(b *testing.B) {
-			for b.Loop() {
-				if err := segmentWriter.AppendEntry(data); err != nil {
+	for _, entryLengthEncoding := range wal.EntryLengthEncodings {
+		for _, entryChecksumType := range wal.EntryChecksumTypes {
+			for _, dataSize := range []int{0, 1, 2, 4, 8, 16} {
+				data := make([]byte, dataSize*1024)
+				segmentWriter, err := wal.NewSegmentWriter(&SegmentWriterFileDiscard{}, wal.Header{
+					Magic:               wal.Magic,
+					Version:             1,
+					EntryLengthEncoding: entryLengthEncoding,
+					EntryChecksumType:   entryChecksumType,
+					FirstSequenceNumber: 0,
+				}, 0, 0, &wal.SyncPolicyNone{})
+				if err != nil {
 					b.Fatal(err)
 				}
+				b.Run(fmt.Sprintf("%s %s %d KB", entryLengthEncoding, entryChecksumType, dataSize), func(b *testing.B) {
+					for b.Loop() {
+						if err := segmentWriter.AppendEntry(data); err != nil {
+							b.Fatal(err)
+						}
+					}
+				})
 			}
-		})
+		}
 	}
 }
 

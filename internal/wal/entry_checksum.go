@@ -24,6 +24,22 @@ const (
 	EntryChecksumTypeCrc64
 )
 
+func (e EntryChecksumType) String() string {
+	switch e {
+	case EntryChecksumTypeCrc32:
+		return "crc32"
+	case EntryChecksumTypeCrc64:
+		return "crc64"
+	default:
+		return "unknown"
+	}
+}
+
+var EntryChecksumTypes = []EntryChecksumType{
+	EntryChecksumTypeCrc32,
+	EntryChecksumTypeCrc64,
+}
+
 // DefaultEntryChecksumType is the checksum type which should work fine for most use cases.
 const DefaultEntryChecksumType = EntryChecksumTypeCrc32
 

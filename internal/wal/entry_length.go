@@ -28,6 +28,28 @@ const (
 	EntryLengthEncodingUvarint
 )
 
+func (e EntryLengthEncoding) String() string {
+	switch e {
+	case EntryLengthEncodingUint16:
+		return "uint16"
+	case EntryLengthEncodingUint32:
+		return "uint32"
+	case EntryLengthEncodingUint64:
+		return "uint64"
+	case EntryLengthEncodingUvarint:
+		return "uvarint"
+	default:
+		return "unknown"
+	}
+}
+
+var EntryLengthEncodings = []EntryLengthEncoding{
+	EntryLengthEncodingUint16,
+	EntryLengthEncodingUint32,
+	EntryLengthEncodingUint64,
+	EntryLengthEncodingUvarint,
+}
+
 // DefaultEntryLengthEncoding is the length encoding which should work fine for most use cases.
 const DefaultEntryLengthEncoding = EntryLengthEncodingUint32
 
