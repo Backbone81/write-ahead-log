@@ -35,7 +35,7 @@ var _ = Describe("EntryLength", func() {
 			var buffer [wal.MaxLengthBufferLen]byte
 			var output bytes.Buffer
 			Expect(writer(&output, buffer[:], value)).To(Succeed())
-			readValue, err := reader(&output, buffer[:])
+			readValue, _, err := reader(&output, buffer[:])
 			Expect(err).ToNot(HaveOccurred())
 			Expect(readValue).To(Equal(value))
 		},
@@ -124,7 +124,7 @@ func BenchmarkEntryLengthReader(b *testing.B) {
 		b.Run(entryLengthReader.name, func(b *testing.B) {
 			for b.Loop() {
 				output = outputBackup
-				if _, err := entryLengthReader.reader(outputAsIoReader, buffer[:]); err != nil {
+				if _, _, err := entryLengthReader.reader(outputAsIoReader, buffer[:]); err != nil {
 					b.Fatal(err)
 				}
 			}

@@ -30,17 +30,11 @@ type SegmentWriter struct {
 	// The header of the segment file.
 	header Header
 
-	// This buffer is used to combine multiple individual file write commands into a single one to improve performance.
-	writeBuffer *bytes.Buffer
-
-	// The sequence number the next entry will receive.
-	nextSequenceNumber uint64
-
 	// The current offset in bytes from the start of the file.
 	offset int64
 
-	// The policy describing how data is flushed to disk.
-	syncPolicy SyncPolicy
+	// The sequence number the next entry will receive.
+	nextSequenceNumber uint64
 
 	// The writer to encode the length of an entry.
 	entryLengthWriter EntryLengthWriter
@@ -51,6 +45,12 @@ type SegmentWriter struct {
 	// This is a temporary buffer for converting integers into slices of bytes. This helps us with reducing the amount
 	// of memory allocations.
 	scratchBuffer [max(MaxLengthBufferLen, MaxChecksumBufferLen)]byte
+
+	// This buffer is used to combine multiple individual file write commands into a single one to improve performance.
+	writeBuffer *bytes.Buffer
+
+	// The policy describing how data is flushed to disk.
+	syncPolicy SyncPolicy
 }
 
 // CreateSegment creates a new segment file in the given directory. It will create the new file with the file extension

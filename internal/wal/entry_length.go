@@ -51,7 +51,7 @@ func GetEntryLengthWriter(entryLengthEncoding EntryLengthEncoding) (EntryLengthW
 }
 
 // EntryLengthReader is the function signature which all entry length reader callbacks need to implement.
-type EntryLengthReader func(reader io.Reader, buffer []byte) (uint64, error)
+type EntryLengthReader func(reader io.Reader, buffer []byte) (uint64, int, error)
 
 // GetEntryLengthReader returns the entry length reader function matching the entry length encoding.
 func GetEntryLengthReader(entryLengthEncoding EntryLengthEncoding) (EntryLengthReader, error) {
@@ -86,11 +86,11 @@ func WriteEntryLengthUint16(writer io.Writer, buffer []byte, length uint64) erro
 
 // ReadEntryLengthUint16 reads the length from the reader encoded as uint16.
 // The buffer is required to avoid allocations and should be big enough to hold the encoded length temporarily.
-func ReadEntryLengthUint16(reader io.Reader, buffer []byte) (uint64, error) {
-	if _, err := io.ReadFull(reader, buffer[:2]); err != nil {
-		return 0, fmt.Errorf("reading WAL entry length: %w", err)
+func ReadEntryLengthUint16(reader io.Reader, buffer []byte) (uint64, int, error) {
+	if n, err := io.ReadFull(reader, buffer[:2]); err != nil {
+		return 0, n, fmt.Errorf("reading WAL entry length: %w", err)
 	}
-	return uint64(Endian.Uint16(buffer[:2])), nil
+	return uint64(Endian.Uint16(buffer[:2])), 2, nil
 }
 
 // WriteEntryLengthUint32 writes the length to the writer encoded as uint32.
@@ -110,11 +110,11 @@ func WriteEntryLengthUint32(writer io.Writer, buffer []byte, length uint64) erro
 
 // ReadEntryLengthUint32 reads the length from the reader encoded as uint32.
 // The buffer is required to avoid allocations and should be big enough to hold the encoded length temporarily.
-func ReadEntryLengthUint32(reader io.Reader, buffer []byte) (uint64, error) {
-	if _, err := io.ReadFull(reader, buffer[:4]); err != nil {
-		return 0, fmt.Errorf("reading WAL entry length: %w", err)
+func ReadEntryLengthUint32(reader io.Reader, buffer []byte) (uint64, int, error) {
+	if n, err := io.ReadFull(reader, buffer[:4]); err != nil {
+		return 0, n, fmt.Errorf("reading WAL entry length: %w", err)
 	}
-	return uint64(Endian.Uint32(buffer[:4])), nil
+	return uint64(Endian.Uint32(buffer[:4])), 4, nil
 }
 
 // WriteEntryLengthUint64 writes the length to the writer encoded as uint64.
@@ -129,11 +129,11 @@ func WriteEntryLengthUint64(writer io.Writer, buffer []byte, length uint64) erro
 
 // ReadEntryLengthUint64 reads the length from the reader encoded as uint64.
 // The buffer is required to avoid allocations and should be big enough to hold the encoded length temporarily.
-func ReadEntryLengthUint64(reader io.Reader, buffer []byte) (uint64, error) {
-	if _, err := io.ReadFull(reader, buffer[:8]); err != nil {
-		return 0, fmt.Errorf("reading WAL entry length: %w", err)
+func ReadEntryLengthUint64(reader io.Reader, buffer []byte) (uint64, int, error) {
+	if n, err := io.ReadFull(reader, buffer[:8]); err != nil {
+		return 0, n, fmt.Errorf("reading WAL entry length: %w", err)
 	}
-	return Endian.Uint64(buffer[:8]), nil
+	return Endian.Uint64(buffer[:8]), 8, nil
 }
 
 // WriteEntryLengthUvarint writes the length to the writer encoded as uvarint.
@@ -148,7 +148,11 @@ func WriteEntryLengthUvarint(writer io.Writer, buffer []byte, length uint64) err
 
 // ReadEntryLengthUvarint reads the length from the reader encoded as uvarint.
 // The buffer is required to avoid allocations and should be big enough to hold the encoded length temporarily.
-func ReadEntryLengthUvarint(reader io.Reader, buffer []byte) (uint64, error) {
+func ReadEntryLengthUvarint(reader io.Reader, buffer []byte) (uint64, int, error) {
 	myByteReader := utils.NewByteReader(reader, buffer)
-	return binary.ReadUvarint(&myByteReader)
+	result, err := binary.ReadUvarint(&myByteReader)
+	if err != nil {
+		return 0, 0, fmt.Errorf("reading WAL entry length: %w", err)
+	}
+	return result, myByteReader.BytesRead(), nil
 }

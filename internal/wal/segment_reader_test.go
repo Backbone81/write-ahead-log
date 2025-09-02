@@ -133,11 +133,11 @@ var _ = Describe("SegmentReader", func() {
 
 		Expect(reader.Offset()).To(Equal(int64(wal.HeaderSize)))
 		Expect(reader.Next()).To(BeTrue())
-		Expect(reader.Offset()).To(Equal(int64(wal.HeaderSize + 1*(8+3+4))))
+		Expect(reader.Offset()).To(Equal(int64(wal.HeaderSize + 1*(4+3+4))))
 		Expect(reader.Next()).To(BeTrue())
-		Expect(reader.Offset()).To(Equal(int64(wal.HeaderSize + 2*(8+3+4))))
+		Expect(reader.Offset()).To(Equal(int64(wal.HeaderSize + 2*(4+3+4))))
 		Expect(reader.Next()).To(BeTrue())
-		Expect(reader.Offset()).To(Equal(int64(wal.HeaderSize + 3*(8+3+4))))
+		Expect(reader.Offset()).To(Equal(int64(wal.HeaderSize + 3*(4+3+4))))
 	})
 })
 

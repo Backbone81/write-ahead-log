@@ -31,7 +31,7 @@ var _ = Describe("EntryChecksum", func() {
 			data := make([]byte, 1024)
 			var output bytes.Buffer
 			Expect(writer(&output, buffer[:], data)).To(Succeed())
-			Expect(reader(&output, buffer[:], data)).To(Succeed())
+			Expect(reader(&output, buffer[:], data)).Error().ToNot(HaveOccurred())
 		},
 		Entry("When using CRC32", wal.WriteEntryChecksumCrc32, wal.ReadEntryChecksumCrc32),
 		Entry("When using CRC64", wal.WriteEntryChecksumCrc64, wal.ReadEntryChecksumCrc64),
@@ -100,7 +100,7 @@ func BenchmarkEntryChecksumReader(b *testing.B) {
 			b.Run(fmt.Sprintf("%s on %d KB data", entryChecksumReader.name, i), func(b *testing.B) {
 				for b.Loop() {
 					*checksumReader = checksumReaderBackup
-					if err := entryChecksumReader.reader(checksumIoReader, buffer[:], data); err != nil {
+					if _, err := entryChecksumReader.reader(checksumIoReader, buffer[:], data); err != nil {
 						b.Fatal(err)
 					}
 				}
