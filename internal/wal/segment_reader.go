@@ -68,36 +68,25 @@ type SegmentReaderValue struct {
 	Data []byte
 }
 
-// NewSegmentReader creates a new segment reader for the file path given as parameter.
+// OpenSegment creates a new segment reader for the file path given as parameter.
 //
 // To avoid resources leaking, the returned SegmentReader needs to be closed by calling Close().
 // Returns an error if the file cannot be opened, read from or the header is malformed.
-func NewSegmentReader(directory string, firstSequenceNumber uint64) (*SegmentReader, error) {
+func OpenSegment(directory string, firstSequenceNumber uint64) (*SegmentReader, error) {
 	segmentFilePath := path.Join(directory, segmentFileName(firstSequenceNumber))
-	segmentReader, err := newSegmentReader(segmentFilePath, firstSequenceNumber)
+	segmentReader, err := openSegment(segmentFilePath, firstSequenceNumber)
 	if err != nil {
 		return nil, fmt.Errorf("segment file %q: %w", segmentFilePath, err)
 	}
 	return segmentReader, nil
 }
 
-func newSegmentReader(segmentFilePath string, firstSequenceNumber uint64) (*SegmentReader, error) {
+func openSegment(segmentFilePath string, firstSequenceNumber uint64) (*SegmentReader, error) {
 	segmentFile, err := os.OpenFile(segmentFilePath, os.O_RDWR, 0) //nolint:gosec // We can not validate paths in a library.
 	if err != nil {
 		return nil, fmt.Errorf("opening file: %w", err)
 	}
 
-	segmentReader, err := newSegmentReaderFromFile(segmentFile, firstSequenceNumber)
-	if err != nil {
-		if closeErr := segmentFile.Close(); closeErr != nil {
-			return nil, errors.Join(err, closeErr)
-		}
-		return nil, err
-	}
-	return segmentReader, nil
-}
-
-func newSegmentReaderFromFile(segmentFile *os.File, firstSequenceNumber uint64) (*SegmentReader, error) {
 	var segmentHeader Header
 	if err := segmentHeader.Read(segmentFile); err != nil {
 		return nil, fmt.Errorf("reading header: %w", err)
@@ -119,6 +108,17 @@ func newSegmentReaderFromFile(segmentFile *os.File, firstSequenceNumber uint64) 
 		return nil, fmt.Errorf("reading file position: %w", err)
 	}
 
+	segmentReader, err := NewSegmentReader(segmentFile, segmentHeader, fileInfo.Size(), currOffset, firstSequenceNumber)
+	if err != nil {
+		if closeErr := segmentFile.Close(); closeErr != nil {
+			return nil, errors.Join(err, closeErr)
+		}
+		return nil, err
+	}
+	return segmentReader, nil
+}
+
+func NewSegmentReader(segmentFile SegmentReaderFile, segmentHeader Header, fileSize int64, offset int64, nextSequenceNumber uint64) (*SegmentReader, error) {
 	entryLengthReader, err := GetEntryLengthReader(segmentHeader.EntryLengthEncoding)
 	if err != nil {
 		return nil, err
@@ -132,12 +132,12 @@ func newSegmentReaderFromFile(segmentFile *os.File, firstSequenceNumber uint64) 
 	return &SegmentReader{
 		file:                segmentFile,
 		header:              segmentHeader,
-		fileSize:            fileInfo.Size(),
-		offset:              currOffset,
-		nextSequenceNumber:  firstSequenceNumber,
-		data:                make([]byte, 0, 4*1024), // Pre-allocate the data slice to reduce the number of allocations.
+		offset:              offset,
+		nextSequenceNumber:  nextSequenceNumber,
 		entryLengthReader:   entryLengthReader,
 		entryChecksumReader: entryChecksumReader,
+		data:                make([]byte, 0, 4*1024), // Pre-allocate the data slice to reduce the number of allocations.
+		fileSize:            fileSize,
 	}, nil
 }
 
@@ -186,6 +186,11 @@ func (r *SegmentReader) next() error {
 	length, lengthBytes, err := r.entryLengthReader(r.file, r.data[:MaxLengthBufferLen])
 	if err != nil {
 		return err
+	}
+
+	remainingBytes := r.fileSize - r.offset
+	if remainingBytes < int64(length) { //nolint:gosec // chances are low that length will overflow
+		return errors.New("the WAL entry data exceeds the maximum possible size")
 	}
 
 	// Read the data part of the entry.

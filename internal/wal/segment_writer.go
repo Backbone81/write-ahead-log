@@ -123,13 +123,13 @@ func NewSegmentWriter(segmentFile SegmentWriterFile, segmentHeader Header, offse
 	return &SegmentWriter{
 		file:                segmentFile,
 		header:              segmentHeader,
-		writeBuffer:         bytes.NewBuffer(make([]byte, 0, 4*1024)),
-		nextSequenceNumber:  nextSequenceNumber,
 		offset:              offset,
-		syncPolicy:          syncPolicy,
+		nextSequenceNumber:  nextSequenceNumber,
 		entryLengthWriter:   entryLengthWriter,
 		entryChecksumWriter: entryChecksumWriter,
 		scratchBuffer:       [10]byte{},
+		writeBuffer:         bytes.NewBuffer(make([]byte, 0, 4*1024)),
+		syncPolicy:          syncPolicy,
 	}, nil
 }
 

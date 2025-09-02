@@ -125,5 +125,5 @@ func (s *SegmentWriterFileDiscard) Sync() error {
 }
 
 func (s *SegmentWriterFileDiscard) Name() string {
-	return "in-memory"
+	return "in-memory-discard"
 }

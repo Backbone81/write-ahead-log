@@ -1,8 +1,10 @@
 package wal_test
 
 import (
+	"bytes"
 	"fmt"
 	"io"
+	"math"
 	"os"
 	"testing"
 
@@ -30,7 +32,7 @@ var _ = Describe("SegmentReader", func() {
 		Expect(err).ToNot(HaveOccurred())
 		Expect(writer.Close()).To(Succeed())
 
-		reader, err := wal.NewSegmentReader(dir, 7)
+		reader, err := wal.OpenSegment(dir, 7)
 		Expect(err).ToNot(HaveOccurred())
 		defer func() {
 			Expect(reader.Close()).To(Succeed())
@@ -48,7 +50,7 @@ var _ = Describe("SegmentReader", func() {
 		Expect(writer.AppendEntry([]byte("baz"))).To(Succeed())
 		Expect(writer.Close()).To(Succeed())
 
-		reader, err := wal.NewSegmentReader(dir, 7)
+		reader, err := wal.OpenSegment(dir, 7)
 		Expect(err).ToNot(HaveOccurred())
 		defer func() {
 			Expect(reader.Close()).To(Succeed())
@@ -84,7 +86,7 @@ var _ = Describe("SegmentReader", func() {
 		Expect(err).ToNot(HaveOccurred())
 		Expect(writer.Close()).To(Succeed())
 
-		reader, err := wal.NewSegmentReader(dir, 7)
+		reader, err := wal.OpenSegment(dir, 7)
 		Expect(err).ToNot(HaveOccurred())
 		defer func() {
 			Expect(reader.Close()).To(Succeed())
@@ -103,7 +105,7 @@ var _ = Describe("SegmentReader", func() {
 		Expect(writer.AppendEntry([]byte("foo"))).To(Succeed())
 		Expect(writer.Close()).To(Succeed())
 
-		reader, err := wal.NewSegmentReader(dir, 7)
+		reader, err := wal.OpenSegment(dir, 7)
 		Expect(err).ToNot(HaveOccurred())
 		defer func() {
 			Expect(reader.Close()).To(Succeed())
@@ -125,7 +127,7 @@ var _ = Describe("SegmentReader", func() {
 		Expect(writer.AppendEntry([]byte("foo"))).To(Succeed())
 		Expect(writer.Close()).To(Succeed())
 
-		reader, err := wal.NewSegmentReader(dir, 7)
+		reader, err := wal.OpenSegment(dir, 7)
 		Expect(err).ToNot(HaveOccurred())
 		defer func() {
 			Expect(reader.Close()).To(Succeed())
@@ -141,52 +143,92 @@ var _ = Describe("SegmentReader", func() {
 	})
 })
 
-func BenchmarkSegmentReader_Next_1000x(b *testing.B) {
-	for _, i := range []int{0, 1, 2, 4, 8} {
-		dir := b.TempDir()
-		writer, err := wal.CreateSegment(dir, 0, wal.DefaultSegmentSize, &wal.SyncPolicyNone{})
+func BenchmarkSegmentReader_Next(b *testing.B) {
+	for _, i := range []int{0, 1, 2, 4, 8, 16} {
+		data := make([]byte, i*1024)
+		recorder := SegmentWriterFileRecorder{}
+		segmentWriter, err := wal.NewSegmentWriter(&recorder, wal.Header{
+			Magic:               wal.Magic,
+			Version:             1,
+			EntryLengthEncoding: wal.DefaultEntryLengthEncoding,
+			EntryChecksumType:   wal.DefaultEntryChecksumType,
+			FirstSequenceNumber: 0,
+		}, 0, 0, &wal.SyncPolicyNone{})
 		if err != nil {
 			b.Fatal(err)
 		}
 
-		data := make([]byte, i*1024)
-
-		for range 1000 {
-			if err := writer.AppendEntry(data); err != nil {
-				b.Fatal(err)
-			}
-		}
-		if err := writer.Close(); err != nil {
+		if err := segmentWriter.AppendEntry(data); err != nil {
 			b.Fatal(err)
 		}
 
+		readerLoop := SegmentReaderFileLoop{
+			Data: recorder.Bytes(),
+		}
+		segmentReader, err := wal.NewSegmentReader(&readerLoop, segmentWriter.Header(), math.MaxInt64, 0, 0)
+		if err != nil {
+			b.Fatal(err)
+		}
 		b.Run(fmt.Sprintf("%d KB data", i), func(b *testing.B) {
-			for range b.N {
-				readSegmentWith1000Entries(b, dir)
+			for b.Loop() {
+				if !segmentReader.Next() {
+					b.Fatal("segment reader could not make progress")
+				}
 			}
 		})
 	}
 }
 
-func readSegmentWith1000Entries(b *testing.B, dir string) {
-	b.Helper()
-	b.StopTimer()
+// SegmentReaderFileLoop provides a stub for the segment file which returns the same data over and over again in an
+// endless loop. It allows us to run large scale benchmarks without having to provide an actual big file on disk or
+// memory.
+type SegmentReaderFileLoop struct {
+	Data   []byte
+	Offset int
+}
 
-	reader, err := wal.NewSegmentReader(dir, 0)
-	if err != nil {
-		b.Fatal(err)
-	}
-	defer func() {
-		if err := reader.Close(); err != nil {
-			b.Fatal(err)
-		}
-	}()
+// SegmentReaderFileLoop implements SegmentReaderFile.
+var _ wal.SegmentReaderFile = (*SegmentReaderFileLoop)(nil)
 
-	b.StartTimer()
-	for range 1000 {
-		if !reader.Next() {
-			b.Fatal("could not read 1000 entries from segment")
-		}
+func (s *SegmentReaderFileLoop) Read(p []byte) (int, error) {
+	copyBytes := min(len(p), len(s.Data)-s.Offset)
+	copy(p, s.Data[s.Offset:s.Offset+copyBytes])
+	s.Offset += copyBytes
+	if s.Offset >= len(s.Data) {
+		s.Offset = 0
 	}
-	b.StopTimer()
+	return copyBytes, nil
+}
+
+func (s *SegmentReaderFileLoop) Close() error {
+	return nil
+}
+
+func (s *SegmentReaderFileLoop) Seek(offset int64, whence int) (int64, error) {
+	return offset, nil
+}
+
+func (s *SegmentReaderFileLoop) Name() string {
+	return "in-memory-loop"
+}
+
+// SegmentWriterFileRecorder provides a stub for a segment file which records what is written to it in memory. It allows
+// us to use a SegmentWriter to prepare a buffer which can then be used by SegmentReaderFileLoop to serve read requests.
+type SegmentWriterFileRecorder struct {
+	bytes.Buffer
+}
+
+// SegmentWriterFileRecorder implements SegmentWriterFile.
+var _ wal.SegmentWriterFile = (*SegmentWriterFileRecorder)(nil)
+
+func (s *SegmentWriterFileRecorder) Close() error {
+	return nil
+}
+
+func (s *SegmentWriterFileRecorder) Sync() error {
+	return nil
+}
+
+func (s *SegmentWriterFileRecorder) Name() string {
+	return "in-memory-recorder"
 }
