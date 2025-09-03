@@ -89,7 +89,7 @@ func BenchmarkSegmentWriter_AppendEntry(b *testing.B) {
 				data := make([]byte, dataSize*1024)
 				segmentWriter, err := wal.NewSegmentWriter(&SegmentWriterFileDiscard{}, wal.Header{
 					Magic:               wal.Magic,
-					Version:             1,
+					Version:             wal.HeaderVersion,
 					EntryLengthEncoding: entryLengthEncoding,
 					EntryChecksumType:   entryChecksumType,
 					FirstSequenceNumber: 0,

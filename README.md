@@ -24,8 +24,8 @@ It supports the following features:
 
 ## TODOs
 
-- Make the entry length configurable
-- Make the entry checksum configurable
+- Drop dynamic endianness and have an inline implementation with a fixed implementation.
+- Replace the varint implementation with a custom one which does not use a bytereader.
 - Allow optional timestamps for each entry
 - Allow optional sequence numbers for each entry
 - Collect metrics about what is happening with the wal

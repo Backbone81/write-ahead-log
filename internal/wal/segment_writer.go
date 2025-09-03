@@ -82,7 +82,7 @@ func CreateSegment(directory string, firstSequenceNumber uint64, segmentSize int
 	// Write the header to the segment file and flush the content to stable storage.
 	segmentHeader := Header{
 		Magic:               Magic,
-		Version:             1,
+		Version:             HeaderVersion,
 		EntryLengthEncoding: DefaultEntryLengthEncoding,
 		EntryChecksumType:   DefaultEntryChecksumType,
 		FirstSequenceNumber: firstSequenceNumber,

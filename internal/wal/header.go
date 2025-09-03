@@ -8,36 +8,52 @@ import (
 	"slices"
 )
 
+var (
+	ErrHeaderInvalidMagicBytes  = errors.New("invalid WAL header magic bytes")
+	ErrHeaderUnsupportedVersion = errors.New("unsupported WAL header version")
+)
+
 // Header describes the segment file header which is located at the start of every segment file.
 type Header struct {
 	// These are the magic bytes to identify a segment file. This must always be "WAL" followed by a zero value byte.
+	// Encoded as four bytes.
 	Magic [4]byte
 
 	// The version of the segment file format to use. This allows us to evolve the header and the file format over
-	// time if necessary.
+	// time if necessary. Encoded as two bytes.
 	Version uint16
 
-	// Describes the way the entry length is encoded in the segment file.
+	// Describes the way the entry length is encoded in the segment file. Encoded as a single byte.
 	EntryLengthEncoding EntryLengthEncoding
 
-	// Describes the way the entry checksum is encoded in the segment file.
+	// Describes the way the entry checksum is encoded in the segment file. Encoded as a single byte.
 	EntryChecksumType EntryChecksumType
 
 	// The sequence number the first entry in the segment file has. Note that the file name and this header value
 	// should always match. To have the first sequence number stored in the header makes it possible to detect
 	// accidental file renames.
+	// Encoded as eight bytes.
 	FirstSequenceNumber uint64
 }
 
-const HeaderSize = 4 + 4 + 8
-
-var (
-	ErrHeaderInvalidMagicBytes  = errors.New("invalid Magic bytes for WAL header")
-	ErrHeaderUnsupportedVersion = errors.New("unsupported version for WAL header")
-)
+// HeaderSize provides the size in bytes of the header. Helpful for reading the full header before decoding individual
+// elements.
+const HeaderSize = 4 + 2 + 1 + 1 + 8
 
 // Magic holds the magic bytes expected at the start of the file.
 var Magic = [4]byte{'W', 'A', 'L', 0}
+
+// HeaderVersion provides the currently supported header version.
+const HeaderVersion = 1
+
+// DefaultHeader provides a header configuration which is a sane default in most situations.
+var DefaultHeader = Header{
+	Magic:               Magic,
+	Version:             HeaderVersion,
+	EntryLengthEncoding: DefaultEntryLengthEncoding,
+	EntryChecksumType:   DefaultEntryChecksumType,
+	FirstSequenceNumber: 0,
+}
 
 // Write serializes the header and outputs it to the given writer.
 func (h *Header) Write(writer io.Writer) error {
@@ -78,7 +94,7 @@ func (h *Header) Validate() error {
 	if !slices.Equal(h.Magic[:], Magic[:]) {
 		return ErrHeaderInvalidMagicBytes
 	}
-	if h.Version != 1 {
+	if h.Version != HeaderVersion {
 		return ErrHeaderUnsupportedVersion
 	}
 	return nil

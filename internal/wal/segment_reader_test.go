@@ -151,7 +151,7 @@ func BenchmarkSegmentReader_Next(b *testing.B) {
 				recorder := SegmentWriterFileRecorder{}
 				segmentWriter, err := wal.NewSegmentWriter(&recorder, wal.Header{
 					Magic:               wal.Magic,
-					Version:             1,
+					Version:             wal.HeaderVersion,
 					EntryLengthEncoding: entryLengthEncoding,
 					EntryChecksumType:   entryChecksumType,
 					FirstSequenceNumber: 0,
