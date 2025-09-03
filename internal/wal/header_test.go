@@ -2,6 +2,7 @@ package wal_test
 
 import (
 	"bytes"
+	"io"
 	"testing"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -12,79 +13,70 @@ import (
 
 var _ = Describe("Header", func() {
 	It("should write the header", func() {
-		var buffer bytes.Buffer
-		header := wal.DefaultHeader
-		header.FirstSequenceNumber = 7
-		Expect(header.Write(&buffer)).To(Succeed())
-		Expect(buffer.Len()).To(Equal(wal.HeaderSize))
+		var output bytes.Buffer
+		var buffer [wal.HeaderSize]byte
+		Expect(wal.WriteHeader(&output, buffer[:], wal.DefaultHeader)).To(Succeed())
+		Expect(output.Len()).To(Equal(wal.HeaderSize))
 	})
 
 	It("should read the header", func() {
-		var buffer bytes.Buffer
-		wantHeader := wal.DefaultHeader
-		wantHeader.FirstSequenceNumber = 7
-		Expect(wantHeader.Write(&buffer)).To(Succeed())
+		var output bytes.Buffer
+		var buffer [wal.HeaderSize]byte
+		Expect(wal.WriteHeader(&output, buffer[:], wal.DefaultHeader)).To(Succeed())
 
-		var gotHeader wal.Header
-		Expect(gotHeader.Read(&buffer)).To(Succeed())
+		gotHeader, err := wal.ReadHeader(&output, buffer[:])
+		Expect(err).ToNot(HaveOccurred())
 
-		Expect(gotHeader).To(Equal(wantHeader))
+		Expect(gotHeader).To(Equal(wal.DefaultHeader))
 	})
 
 	It("should fail reading the header from an empty buffer", func() {
-		var buffer bytes.Buffer
-		var header wal.Header
-		Expect(header.Read(&buffer)).ToNot(Succeed())
+		var input bytes.Buffer
+		var buffer [wal.HeaderSize]byte
+		Expect(wal.ReadHeader(&input, buffer[:])).Error().To(MatchError(io.EOF))
 	})
 
 	It("should fail reading the header with wrong magic bytes", func() {
-		var buffer bytes.Buffer
-		header := wal.DefaultHeader
-		header.FirstSequenceNumber = 7
-		Expect(header.Write(&buffer)).To(Succeed())
+		var output bytes.Buffer
+		var buffer [wal.HeaderSize]byte
+		Expect(wal.WriteHeader(&output, buffer[:], wal.DefaultHeader)).To(Succeed())
 
-		buffer.Bytes()[2] = 'X'
-		Expect(header.Read(&buffer)).ToNot(Succeed())
+		output.Bytes()[2] = 'X'
+		Expect(wal.ReadHeader(&output, buffer[:])).Error().To(MatchError(wal.ErrHeaderInvalidMagicBytes))
 	})
 
 	It("should fail reading the header which is too short", func() {
-		var buffer bytes.Buffer
-		header := wal.DefaultHeader
-		header.FirstSequenceNumber = 7
-		Expect(header.Write(&buffer)).To(Succeed())
+		var output bytes.Buffer
+		var buffer [wal.HeaderSize]byte
+		Expect(wal.WriteHeader(&output, buffer[:], wal.DefaultHeader)).To(Succeed())
 
-		buffer.Truncate(buffer.Len() - 1)
-		Expect(header.Read(&buffer)).ToNot(Succeed())
+		output.Truncate(output.Len() - 1)
+		Expect(wal.ReadHeader(&output, buffer[:])).Error().To(MatchError(io.ErrUnexpectedEOF))
 	})
 })
 
-func BenchmarkHeader_Write(b *testing.B) {
-	buffer := bytes.NewBuffer(make([]byte, 0, 1024*1024))
-	header := wal.DefaultHeader
-	if err := header.Validate(); err != nil {
-		b.Fatal(err)
-	}
-	b.ResetTimer()
-
-	for range b.N {
-		if err := header.Write(buffer); err != nil {
+func BenchmarkWriteHeader(b *testing.B) {
+	var buffer [wal.HeaderSize]byte
+	for b.Loop() {
+		if err := wal.WriteHeader(io.Discard, buffer[:], wal.DefaultHeader); err != nil {
 			b.Fatal(err)
 		}
 	}
 }
 
-func BenchmarkHeader_Read(b *testing.B) {
-	buffer := bytes.NewBuffer(make([]byte, 0, 1024*1024))
-	header := wal.DefaultHeader
-	for range b.N {
-		if err := header.Write(buffer); err != nil {
-			b.Fatal(err)
-		}
+func BenchmarkReadHeader(b *testing.B) {
+	var output bytes.Buffer
+	var buffer [wal.HeaderSize]byte
+	if err := wal.WriteHeader(&output, buffer[:], wal.DefaultHeader); err != nil {
+		b.Fatal(err)
 	}
-	b.ResetTimer()
 
-	for range b.N {
-		if err := header.Read(buffer); err != nil {
+	input := SegmentReaderFileLoop{
+		Data: output.Bytes(),
+	}
+
+	for b.Loop() {
+		if _, err := wal.ReadHeader(&input, buffer[:]); err != nil {
 			b.Fatal(err)
 		}
 	}

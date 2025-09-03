@@ -87,12 +87,10 @@ func openSegment(segmentFilePath string, firstSequenceNumber uint64) (*SegmentRe
 		return nil, fmt.Errorf("opening file: %w", err)
 	}
 
-	var segmentHeader Header
-	if err := segmentHeader.Read(segmentFile); err != nil {
+	var buffer [HeaderSize]byte
+	segmentHeader, err := ReadHeader(segmentFile, buffer[:])
+	if err != nil {
 		return nil, fmt.Errorf("reading header: %w", err)
-	}
-	if err := segmentHeader.Validate(); err != nil {
-		return nil, fmt.Errorf("validating header: %w", err)
 	}
 	if segmentHeader.FirstSequenceNumber != firstSequenceNumber {
 		return nil, fmt.Errorf("expected first sequence number to be %d but got %d", firstSequenceNumber, segmentHeader.FirstSequenceNumber)

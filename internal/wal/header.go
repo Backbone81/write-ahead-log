@@ -1,7 +1,6 @@
 package wal
 
 import (
-	"encoding/binary"
 	"errors"
 	"fmt"
 	"io"
@@ -55,47 +54,46 @@ var DefaultHeader = Header{
 	FirstSequenceNumber: 0,
 }
 
-// Write serializes the header and outputs it to the given writer.
-func (h *Header) Write(writer io.Writer) error {
-	var buffer [HeaderSize]byte
-	copy(buffer[:4], h.Magic[:])
-	Endian.PutUint16(buffer[4:6], h.Version)
-	buffer[6] = byte(h.EntryLengthEncoding)
-	buffer[7] = byte(h.EntryChecksumType)
-	Endian.PutUint64(buffer[8:16], h.FirstSequenceNumber)
-	if _, err := writer.Write(buffer[:]); err != nil {
+// WriteHeader writes the segment header to the writer.
+// The buffer is required to avoid allocations and should be big enough to hold the full header temporarily.
+func WriteHeader(writer io.Writer, buffer []byte, header Header) error {
+	copy(buffer[:4], header.Magic[:])
+	Endian.PutUint16(buffer[4:6], header.Version)
+	buffer[6] = byte(header.EntryLengthEncoding)
+	buffer[7] = byte(header.EntryChecksumType)
+	Endian.PutUint64(buffer[8:16], header.FirstSequenceNumber)
+	if _, err := writer.Write(buffer); err != nil {
 		return fmt.Errorf("writing WAL header: %w", err)
 	}
 	return nil
 }
 
-// Read deserializes the header from the given reader. It validates the header after reading.
-func (h *Header) Read(reader io.Reader) error {
-	var buffer [HeaderSize]byte
-	if _, err := io.ReadFull(reader, buffer[:]); err != nil {
-		return fmt.Errorf("reading WAL header: %w", err)
+// ReadHeader reads the segment header from the reader.
+// The buffer is required to avoid allocations and should be big enough to hold the full header temporarily.
+// An error is returned when the header does not match expectations (like magic bytes, version, etc.).
+func ReadHeader(reader io.Reader, buffer []byte) (Header, error) {
+	var result Header
+	if _, err := io.ReadFull(reader, buffer[:HeaderSize]); err != nil {
+		return Header{}, fmt.Errorf("reading WAL header: %w", err)
 	}
-	if _, err := binary.Decode(buffer[0:4], Endian, h.Magic[:]); err != nil {
-		return fmt.Errorf("decoding WAL header Magic bytes: %w", err)
-	}
-	if _, err := binary.Decode(buffer[4:6], Endian, &h.Version); err != nil {
-		return fmt.Errorf("decoding WAL header version: %w", err)
-	}
-	h.EntryLengthEncoding = EntryLengthEncoding(buffer[6])
-	h.EntryChecksumType = EntryChecksumType(buffer[7])
-	if _, err := binary.Decode(buffer[8:16], Endian, &h.FirstSequenceNumber); err != nil {
-		return fmt.Errorf("decoding WAL header sequence number: %w", err)
-	}
-	return h.Validate()
-}
 
-// Validate makes sure that the header is valid. This includes checking the magic bytes and the version.
-func (h *Header) Validate() error {
-	if !slices.Equal(h.Magic[:], Magic[:]) {
-		return ErrHeaderInvalidMagicBytes
+	copy(result.Magic[:], buffer[:4])
+	result.Version = Endian.Uint16(buffer[4:6])
+	result.EntryLengthEncoding = EntryLengthEncoding(buffer[6])
+	result.EntryChecksumType = EntryChecksumType(buffer[7])
+	result.FirstSequenceNumber = Endian.Uint64(buffer[8:16])
+
+	if result.Magic != Magic {
+		return Header{}, ErrHeaderInvalidMagicBytes
 	}
-	if h.Version != HeaderVersion {
-		return ErrHeaderUnsupportedVersion
+	if result.Version != HeaderVersion {
+		return Header{}, ErrHeaderUnsupportedVersion
 	}
-	return nil
+	if !slices.Contains(EntryLengthEncodings, result.EntryLengthEncoding) {
+		return Header{}, ErrEntryLengthEncodingUnsupported
+	}
+	if !slices.Contains(EntryChecksumTypes, result.EntryChecksumType) {
+		return Header{}, ErrEntryChecksumTypeUnsupported
+	}
+	return result, nil
 }

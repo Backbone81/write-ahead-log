@@ -87,7 +87,8 @@ func CreateSegment(directory string, firstSequenceNumber uint64, segmentSize int
 		EntryChecksumType:   DefaultEntryChecksumType,
 		FirstSequenceNumber: firstSequenceNumber,
 	}
-	if err := segmentHeader.Write(segmentFile); err != nil {
+	var buffer [HeaderSize]byte
+	if err := WriteHeader(segmentFile, buffer[:], segmentHeader); err != nil {
 		return nil, fmt.Errorf("writing header to segment file %q: %w", newSegmentFilePath, err)
 	}
 	if err := segmentFile.Sync(); err != nil {
