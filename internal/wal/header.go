@@ -63,7 +63,7 @@ func WriteHeader(writer io.Writer, buffer []byte, header Header) error {
 	buffer[7] = byte(header.EntryChecksumType)
 	Endian.PutUint64(buffer[8:16], header.FirstSequenceNumber)
 	if _, err := writer.Write(buffer); err != nil {
-		return fmt.Errorf("writing WAL header: %w", err)
+		return headerWriteError(err)
 	}
 	return nil
 }
@@ -74,7 +74,7 @@ func WriteHeader(writer io.Writer, buffer []byte, header Header) error {
 func ReadHeader(reader io.Reader, buffer []byte) (Header, error) {
 	var result Header
 	if _, err := io.ReadFull(reader, buffer[:HeaderSize]); err != nil {
-		return Header{}, fmt.Errorf("reading WAL header: %w", err)
+		return Header{}, headerReadError(err)
 	}
 
 	copy(result.Magic[:], buffer[:4])
@@ -96,4 +96,12 @@ func ReadHeader(reader io.Reader, buffer []byte) (Header, error) {
 		return Header{}, ErrEntryChecksumTypeUnsupported
 	}
 	return result, nil
+}
+
+func headerWriteError(err error) error {
+	return fmt.Errorf("writing WAL header: %w", err)
+}
+
+func headerReadError(err error) error {
+	return fmt.Errorf("reading WAL header: %w", err)
 }
