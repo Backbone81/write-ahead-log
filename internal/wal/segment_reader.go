@@ -19,24 +19,23 @@ type SegmentReaderFile interface {
 	Name() string
 }
 
-// SegmentReader provides functionality for reading a segment file of the write-ahead-log.
+// SegmentReader provides functionality for reading from a single segment file.
 //
-// It is not thread safe and should only be used in a single go routine. Otherwise, external synchronization must be
-// provided.
+// Instances of SegmentReader are NOT safe to use concurrently. You need to provide external synchronization.
 type SegmentReader struct {
 	noCopy utils.NoCopy
 
 	// The segment file to read from.
 	file SegmentReaderFile
 
-	// The file header as read from the start of the segment file.
+	// The header of the segment file.
 	header Header
 
 	// The current offset from the start of the file in bytes. This is used together with fileSize to calculate the
 	// available data until the end of the file, and to reset to a former offset after a failed read of an entry.
 	offset int64
 
-	// The next sequence number is used to keep track of the sequence number as we are reading entries from the segment.
+	// The sequence number the next entry will receive.
 	nextSequenceNumber uint64
 
 	// The reader to decode the length of an entry.
@@ -76,39 +75,44 @@ func OpenSegment(directory string, firstSequenceNumber uint64) (*SegmentReader, 
 	segmentFilePath := path.Join(directory, segmentFileName(firstSequenceNumber))
 	segmentReader, err := openSegment(segmentFilePath, firstSequenceNumber)
 	if err != nil {
-		return nil, fmt.Errorf("segment file %q: %w", segmentFilePath, err)
+		return nil, fmt.Errorf("the WAL segment file %q: %w", segmentFilePath, err)
 	}
 	return segmentReader, nil
 }
 
 func openSegment(segmentFilePath string, firstSequenceNumber uint64) (*SegmentReader, error) {
-	segmentFile, err := os.OpenFile(segmentFilePath, os.O_RDWR, 0) //nolint:gosec // We can not validate paths in a library.
+	file, err := os.OpenFile(segmentFilePath, os.O_RDWR, 0) //nolint:gosec // We can not validate paths in a library.
 	if err != nil {
 		return nil, fmt.Errorf("opening file: %w", err)
 	}
 
 	var buffer [HeaderSize]byte
-	segmentHeader, err := ReadHeader(segmentFile, buffer[:])
+	header, err := ReadHeader(file, buffer[:])
 	if err != nil {
 		return nil, fmt.Errorf("reading header: %w", err)
 	}
-	if segmentHeader.FirstSequenceNumber != firstSequenceNumber {
-		return nil, fmt.Errorf("expected first sequence number to be %d but got %d", firstSequenceNumber, segmentHeader.FirstSequenceNumber)
+	if header.FirstSequenceNumber != firstSequenceNumber {
+		return nil, fmt.Errorf("expected first sequence number to be %d but got %d", firstSequenceNumber, header.FirstSequenceNumber)
 	}
 
-	fileInfo, err := segmentFile.Stat()
+	fileInfo, err := file.Stat()
 	if err != nil {
 		return nil, fmt.Errorf("reading file size: %w", err)
 	}
 
-	currOffset, err := segmentFile.Seek(0, io.SeekCurrent)
+	currOffset, err := file.Seek(0, io.SeekCurrent)
 	if err != nil {
 		return nil, fmt.Errorf("reading file position: %w", err)
 	}
 
-	segmentReader, err := NewSegmentReader(segmentFile, segmentHeader, fileInfo.Size(), currOffset, firstSequenceNumber)
+	segmentReader, err := NewSegmentReader(file, NewSegmentReaderConfig{
+		Header:             header,
+		FileSize:           fileInfo.Size(),
+		Offset:             currOffset,
+		NextSequenceNumber: firstSequenceNumber,
+	})
 	if err != nil {
-		if closeErr := segmentFile.Close(); closeErr != nil {
+		if closeErr := file.Close(); closeErr != nil {
 			return nil, errors.Join(err, closeErr)
 		}
 		return nil, err
@@ -116,26 +120,42 @@ func openSegment(segmentFilePath string, firstSequenceNumber uint64) (*SegmentRe
 	return segmentReader, nil
 }
 
-func NewSegmentReader(segmentFile SegmentReaderFile, segmentHeader Header, fileSize int64, offset int64, nextSequenceNumber uint64) (*SegmentReader, error) {
-	entryLengthReader, err := GetEntryLengthReader(segmentHeader.EntryLengthEncoding)
+// NewSegmentReaderConfig is the configuration required for a call to NewSegmentReader.
+type NewSegmentReaderConfig struct {
+	// Header is the segment file header.
+	Header Header
+
+	// Offset is the current position in bytes from the start of the file.
+	Offset int64
+
+	// NextSequenceNumber is the sequence number the next entry will receive.
+	NextSequenceNumber uint64
+
+	// FileSize is the total size in bytes of the segment file.
+	FileSize int64
+}
+
+// NewSegmentReader creates a SegmentReader from a file which is already open.
+func NewSegmentReader(file SegmentReaderFile, newSegmentReaderConfig NewSegmentReaderConfig) (*SegmentReader, error) {
+	entryLengthReader, err := GetEntryLengthReader(newSegmentReaderConfig.Header.EntryLengthEncoding)
 	if err != nil {
 		return nil, err
 	}
 
-	entryChecksumReader, err := GetEntryChecksumReader(segmentHeader.EntryChecksumType)
+	entryChecksumReader, err := GetEntryChecksumReader(newSegmentReaderConfig.Header.EntryChecksumType)
 	if err != nil {
 		return nil, err
 	}
 
 	return &SegmentReader{
-		file:                segmentFile,
-		header:              segmentHeader,
-		offset:              offset,
-		nextSequenceNumber:  nextSequenceNumber,
+		file:                file,
+		header:              newSegmentReaderConfig.Header,
+		offset:              newSegmentReaderConfig.Offset,
+		nextSequenceNumber:  newSegmentReaderConfig.NextSequenceNumber,
 		entryLengthReader:   entryLengthReader,
 		entryChecksumReader: entryChecksumReader,
 		data:                make([]byte, 4*1024), // Pre-allocate the data slice to reduce the number of allocations.
-		fileSize:            fileSize,
+		fileSize:            newSegmentReaderConfig.FileSize,
 	}, nil
 }
 
@@ -149,19 +169,18 @@ func (r *SegmentReader) Header() Header {
 	return r.header
 }
 
-// NextSequenceNumber returns the sequence number the next entry will receive.
-func (r *SegmentReader) NextSequenceNumber() uint64 {
-	return r.nextSequenceNumber
-}
-
 // Offset returns the offset in bytes from the start of the file.
 func (r *SegmentReader) Offset() int64 {
 	return r.offset
 }
 
+// NextSequenceNumber returns the sequence number the next entry will receive.
+func (r *SegmentReader) NextSequenceNumber() uint64 {
+	return r.nextSequenceNumber
+}
+
 // Next reports if an entry has been successfully read. When it returns true, Err() returns nil and Value() contains
-// valid data. When it returns false, Err() might be nil if the reader has reached the end of the file, or it might
-// return an error. Value() contains invalid data in that situation.
+// valid data. When it returns false, Err() contains the error and Value() contains invalid data.
 func (r *SegmentReader) Next() bool {
 	if r.err = r.next(); r.err != nil {
 		r.err = errors.Join(ErrEntryNone, r.err)
@@ -234,6 +253,10 @@ func (r *SegmentReader) Value() SegmentReaderValue {
 }
 
 // Err returns the error for the last call to Next().
+// Returns ErrEntryNone when no entry could be read. This indicates either a corrupt entry or the end of the written
+// entries in the pre-allocated segment file.
+// Returns io.EOF when the end of the segment file was reached and no more data could be read. This error is still
+// wrapped in ErrEntryNone but can be checked for separately.
 func (r *SegmentReader) Err() error {
 	return r.err
 }
@@ -241,7 +264,7 @@ func (r *SegmentReader) Err() error {
 // ToWriter returns a SegmentWriter to append to the open segment file. You must have read all entries of the segment
 // before you call this method. Otherwise, it will fail. After a call to ToWriter(), you cannot use the SegmentReader
 // anymore.
-func (r *SegmentReader) ToWriter(syncPolicy SyncPolicy) (*SegmentWriter, error) {
+func (r *SegmentReader) ToWriter(syncPolicyType SyncPolicyType) (*SegmentWriter, error) {
 	if !errors.Is(r.err, ErrEntryNone) {
 		return nil, errors.New("segment needs to be read until the last entry is reached")
 	}
@@ -251,7 +274,12 @@ func (r *SegmentReader) ToWriter(syncPolicy SyncPolicy) (*SegmentWriter, error) 
 		return nil, errors.New("the segment file does not implement the interface for writing to it")
 	}
 
-	segmentWriter, err := NewSegmentWriter(writerFile, r.header, r.offset, r.nextSequenceNumber, syncPolicy)
+	segmentWriter, err := NewSegmentWriter(writerFile, NewSegmentWriterConfig{
+		Header:             r.header,
+		Offset:             r.offset,
+		NextSequenceNumber: r.nextSequenceNumber,
+		SyncPolicyType:     syncPolicyType,
+	})
 	if err != nil {
 		return nil, err
 	}

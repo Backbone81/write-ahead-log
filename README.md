@@ -24,6 +24,7 @@ It supports the following features:
 
 ## TODOs
 
+- Implement segment creation which works on windows and linux
 - Drop dynamic endianness and have an inline implementation with a fixed implementation.
 - Replace the varint implementation with a custom one which does not use a bytereader.
 - Allow optional timestamps for each entry

@@ -1,12 +1,14 @@
 package wal
 
 import (
+	"encoding/binary"
 	"fmt"
 	"os"
 	"regexp"
 	"slices"
 	"strconv"
 	"strings"
+	"unsafe"
 )
 
 const DefaultSegmentSize = 64 * 1024 * 1024
@@ -68,4 +70,16 @@ func SegmentFromSequenceNumber(directory string, sequenceNumber uint64) (uint64,
 
 func segmentFileName(sequenceNumber uint64) string {
 	return fmt.Sprintf("%020d.wal", sequenceNumber)
+}
+
+var Endian = detectNativeEndian()
+
+// detectNativeEndian determines the native endianness of the system the application is running on.
+func detectNativeEndian() binary.ByteOrder {
+	var i uint16 = 0x1
+	b := (*[2]byte)(unsafe.Pointer(&i)) //nolint:gosec // There is no safe way to detect the system endianness.
+	if b[0] == 0x1 {
+		return binary.LittleEndian
+	}
+	return binary.BigEndian
 }

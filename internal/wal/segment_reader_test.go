@@ -1,7 +1,6 @@
 package wal_test
 
 import (
-	"bytes"
 	"fmt"
 	"io"
 	"math"
@@ -15,119 +14,164 @@ import (
 )
 
 var _ = Describe("SegmentReader", func() {
-	var dir string
+	for _, entryLengthEncoding := range wal.EntryLengthEncodings {
+		for _, entryChecksumType := range wal.EntryChecksumTypes {
+			for _, syncPolicyType := range wal.SyncPolicyTypes {
+				Context(fmt.Sprintf("With length encoding %s and entry checksum %s through sync policy %s", entryLengthEncoding, entryChecksumType, syncPolicyType), func() {
+					var dir string
 
-	BeforeEach(func() {
-		var err error
-		dir, err = os.MkdirTemp("", "test-segment-writer-*")
-		Expect(err).ToNot(HaveOccurred())
-	})
+					BeforeEach(func() {
+						var err error
+						dir, err = os.MkdirTemp("", "test-segment-reader-*")
+						Expect(err).ToNot(HaveOccurred())
+					})
 
-	AfterEach(func() {
-		Expect(os.RemoveAll(dir)).To(Succeed())
-	})
+					AfterEach(func() {
+						Expect(os.RemoveAll(dir)).To(Succeed())
+					})
 
-	It("should read an empty segment file", func() {
-		writer, err := wal.CreateSegment(dir, 7, 0, &wal.SyncPolicyNone{})
-		Expect(err).ToNot(HaveOccurred())
-		Expect(writer.Close()).To(Succeed())
+					It("should read an empty segment file", func() {
+						writer, err := wal.CreateSegment(dir, 0, wal.CreateSegmentConfig{
+							PreAllocationSize:   0,
+							EntryLengthEncoding: entryLengthEncoding,
+							EntryChecksumType:   entryChecksumType,
+							SyncPolicyType:      syncPolicyType,
+						})
+						Expect(err).ToNot(HaveOccurred())
+						Expect(writer.Close()).To(Succeed())
 
-		reader, err := wal.OpenSegment(dir, 7)
-		Expect(err).ToNot(HaveOccurred())
-		defer func() {
-			Expect(reader.Close()).To(Succeed())
-		}()
+						reader, err := wal.OpenSegment(dir, 0)
+						Expect(err).ToNot(HaveOccurred())
+						defer func() {
+							Expect(reader.Close()).To(Succeed())
+						}()
 
-		Expect(reader.Next()).To(BeFalse())
-		Expect(reader.Err()).To(MatchError(io.EOF))
-	})
+						Expect(reader.Next()).To(BeFalse())
+						Expect(reader.Err()).To(MatchError(io.EOF))
+					})
 
-	It("should read a full segment file", func() {
-		writer, err := wal.CreateSegment(dir, 7, 0, &wal.SyncPolicyNone{})
-		Expect(err).ToNot(HaveOccurred())
-		Expect(writer.AppendEntry([]byte("foo"))).To(Succeed())
-		Expect(writer.AppendEntry([]byte("bar"))).To(Succeed())
-		Expect(writer.AppendEntry([]byte("baz"))).To(Succeed())
-		Expect(writer.Close()).To(Succeed())
+					It("should read a full segment file", func() {
+						writer, err := wal.CreateSegment(dir, 0, wal.CreateSegmentConfig{
+							PreAllocationSize:   0,
+							EntryLengthEncoding: entryLengthEncoding,
+							EntryChecksumType:   entryChecksumType,
+							SyncPolicyType:      syncPolicyType,
+						})
+						Expect(err).ToNot(HaveOccurred())
+						Expect(writer.AppendEntry([]byte("foo"))).Error().ToNot(HaveOccurred())
+						Expect(writer.AppendEntry([]byte("bar"))).Error().ToNot(HaveOccurred())
+						Expect(writer.AppendEntry([]byte("baz"))).Error().ToNot(HaveOccurred())
+						Expect(writer.Close()).To(Succeed())
 
-		reader, err := wal.OpenSegment(dir, 7)
-		Expect(err).ToNot(HaveOccurred())
-		defer func() {
-			Expect(reader.Close()).To(Succeed())
-		}()
+						reader, err := wal.OpenSegment(dir, 0)
+						Expect(err).ToNot(HaveOccurred())
+						defer func() {
+							Expect(reader.Close()).To(Succeed())
+						}()
 
-		Expect(reader.Next()).To(BeTrue())
-		Expect(reader.Err()).To(Succeed())
-		Expect(reader.Value()).To(Equal(wal.SegmentReaderValue{
-			SequenceNumber: 7,
-			Data:           []byte("foo"),
-		}))
+						Expect(reader.Next()).To(BeTrue())
+						Expect(reader.Err()).To(Succeed())
+						Expect(reader.Value()).To(Equal(wal.SegmentReaderValue{
+							SequenceNumber: 0,
+							Data:           []byte("foo"),
+						}))
 
-		Expect(reader.Next()).To(BeTrue())
-		Expect(reader.Err()).To(Succeed())
-		Expect(reader.Value()).To(Equal(wal.SegmentReaderValue{
-			SequenceNumber: 8,
-			Data:           []byte("bar"),
-		}))
+						Expect(reader.Next()).To(BeTrue())
+						Expect(reader.Err()).To(Succeed())
+						Expect(reader.Value()).To(Equal(wal.SegmentReaderValue{
+							SequenceNumber: 1,
+							Data:           []byte("bar"),
+						}))
 
-		Expect(reader.Next()).To(BeTrue())
-		Expect(reader.Err()).To(Succeed())
-		Expect(reader.Value()).To(Equal(wal.SegmentReaderValue{
-			SequenceNumber: 9,
-			Data:           []byte("baz"),
-		}))
+						Expect(reader.Next()).To(BeTrue())
+						Expect(reader.Err()).To(Succeed())
+						Expect(reader.Value()).To(Equal(wal.SegmentReaderValue{
+							SequenceNumber: 2,
+							Data:           []byte("baz"),
+						}))
 
-		Expect(reader.Next()).To(BeFalse())
-		Expect(reader.Err()).To(MatchError(io.EOF))
-	})
+						Expect(reader.Next()).To(BeFalse())
+						Expect(reader.Err()).To(MatchError(io.EOF))
+					})
 
-	It("should read a pre-allocated segment file", func() {
-		writer, err := wal.CreateSegment(dir, 7, wal.DefaultSegmentSize, &wal.SyncPolicyNone{})
-		Expect(err).ToNot(HaveOccurred())
-		Expect(writer.Close()).To(Succeed())
+					It("should read a pre-allocated segment file", func() {
+						writer, err := wal.CreateSegment(dir, 0, wal.CreateSegmentConfig{
+							PreAllocationSize:   wal.DefaultSegmentSize,
+							EntryLengthEncoding: entryLengthEncoding,
+							EntryChecksumType:   entryChecksumType,
+							SyncPolicyType:      syncPolicyType,
+						})
+						Expect(err).ToNot(HaveOccurred())
+						Expect(writer.Close()).To(Succeed())
 
-		reader, err := wal.OpenSegment(dir, 7)
-		Expect(err).ToNot(HaveOccurred())
-		defer func() {
-			Expect(reader.Close()).To(Succeed())
-		}()
+						reader, err := wal.OpenSegment(dir, 0)
+						Expect(err).ToNot(HaveOccurred())
+						defer func() {
+							Expect(reader.Close()).To(Succeed())
+						}()
 
-		Expect(reader.Next()).To(BeFalse())
-		Expect(reader.Err()).ToNot(MatchError(io.EOF))
-		Expect(reader.Err()).To(MatchError(wal.ErrEntryNone))
-	})
+						Expect(reader.Next()).To(BeFalse())
+						Expect(reader.Err()).ToNot(MatchError(io.EOF))
+						Expect(reader.Err()).To(MatchError(wal.ErrEntryNone))
+					})
+				})
+			}
+		}
+	}
 
 	It("should correctly report sequence numbers", func() {
-		writer, err := wal.CreateSegment(dir, 7, wal.DefaultSegmentSize, &wal.SyncPolicyNone{})
+		var recorder SegmentWriterFileRecorder
+		writer, err := wal.NewSegmentWriter(&recorder, wal.NewSegmentWriterConfig{
+			Header:         wal.DefaultHeader,
+			Offset:         wal.HeaderSize,
+			SyncPolicyType: wal.SyncPolicyTypeNone,
+		})
 		Expect(err).ToNot(HaveOccurred())
-		Expect(writer.AppendEntry([]byte("foo"))).To(Succeed())
-		Expect(writer.AppendEntry([]byte("foo"))).To(Succeed())
-		Expect(writer.AppendEntry([]byte("foo"))).To(Succeed())
+		Expect(writer.AppendEntry([]byte("foo"))).Error().ToNot(HaveOccurred())
+		Expect(writer.AppendEntry([]byte("foo"))).Error().ToNot(HaveOccurred())
+		Expect(writer.AppendEntry([]byte("foo"))).Error().ToNot(HaveOccurred())
 		Expect(writer.Close()).To(Succeed())
 
-		reader, err := wal.OpenSegment(dir, 7)
+		reader, err := wal.NewSegmentReader(&SegmentReaderFileLoop{
+			Data: recorder.Bytes(),
+		}, wal.NewSegmentReaderConfig{
+			Header:   wal.DefaultHeader,
+			Offset:   wal.HeaderSize,
+			FileSize: math.MaxInt64,
+		})
 		Expect(err).ToNot(HaveOccurred())
 		defer func() {
 			Expect(reader.Close()).To(Succeed())
 		}()
 
-		Expect(reader.NextSequenceNumber()).To(Equal(uint64(7)))
+		Expect(reader.NextSequenceNumber()).To(Equal(uint64(0)))
 		Expect(reader.Next()).To(BeTrue())
-		Expect(reader.NextSequenceNumber()).To(Equal(uint64(8)))
+		Expect(reader.NextSequenceNumber()).To(Equal(uint64(1)))
 		Expect(reader.Next()).To(BeTrue())
-		Expect(reader.NextSequenceNumber()).To(Equal(uint64(9)))
+		Expect(reader.NextSequenceNumber()).To(Equal(uint64(2)))
 		Expect(reader.Next()).To(BeTrue())
 	})
 
 	It("should correctly report offsets", func() {
-		writer, err := wal.CreateSegment(dir, 7, wal.DefaultSegmentSize, &wal.SyncPolicyNone{})
+		var recorder SegmentWriterFileRecorder
+		writer, err := wal.NewSegmentWriter(&recorder, wal.NewSegmentWriterConfig{
+			Header:         wal.DefaultHeader,
+			Offset:         wal.HeaderSize,
+			SyncPolicyType: wal.SyncPolicyTypeNone,
+		})
 		Expect(err).ToNot(HaveOccurred())
-		Expect(writer.AppendEntry([]byte("foo"))).To(Succeed())
-		Expect(writer.AppendEntry([]byte("foo"))).To(Succeed())
-		Expect(writer.AppendEntry([]byte("foo"))).To(Succeed())
+		Expect(writer.AppendEntry([]byte("foo"))).Error().ToNot(HaveOccurred())
+		Expect(writer.AppendEntry([]byte("foo"))).Error().ToNot(HaveOccurred())
+		Expect(writer.AppendEntry([]byte("foo"))).Error().ToNot(HaveOccurred())
 		Expect(writer.Close()).To(Succeed())
 
-		reader, err := wal.OpenSegment(dir, 7)
+		reader, err := wal.NewSegmentReader(&SegmentReaderFileLoop{
+			Data: recorder.Bytes(),
+		}, wal.NewSegmentReaderConfig{
+			Header:   wal.DefaultHeader,
+			Offset:   wal.HeaderSize,
+			FileSize: math.MaxInt64,
+		})
 		Expect(err).ToNot(HaveOccurred())
 		defer func() {
 			Expect(reader.Close()).To(Succeed())
@@ -148,26 +192,31 @@ func BenchmarkSegmentReader_Next(b *testing.B) {
 		for _, entryChecksumType := range wal.EntryChecksumTypes {
 			for _, dataSize := range []int{0, 1, 2, 4, 8, 16} {
 				data := make([]byte, dataSize*1024)
-				recorder := SegmentWriterFileRecorder{}
-				segmentWriter, err := wal.NewSegmentWriter(&recorder, wal.Header{
-					Magic:               wal.Magic,
-					Version:             wal.HeaderVersion,
-					EntryLengthEncoding: entryLengthEncoding,
-					EntryChecksumType:   entryChecksumType,
-					FirstSequenceNumber: 0,
-				}, 0, 0, &wal.SyncPolicyNone{})
+				var recorder SegmentWriterFileRecorder
+				segmentWriter, err := wal.NewSegmentWriter(&SegmentWriterFileDiscard{}, wal.NewSegmentWriterConfig{
+					Header: wal.Header{
+						Magic:               wal.Magic,
+						Version:             wal.HeaderVersion,
+						EntryLengthEncoding: entryLengthEncoding,
+						EntryChecksumType:   entryChecksumType,
+					},
+					SyncPolicyType: wal.SyncPolicyTypeNone,
+				})
 				if err != nil {
 					b.Fatal(err)
 				}
 
-				if err := segmentWriter.AppendEntry(data); err != nil {
+				if _, err := segmentWriter.AppendEntry(data); err != nil {
 					b.Fatal(err)
 				}
 
 				readerLoop := SegmentReaderFileLoop{
 					Data: recorder.Bytes(),
 				}
-				segmentReader, err := wal.NewSegmentReader(&readerLoop, segmentWriter.Header(), math.MaxInt64, 0, 0)
+				segmentReader, err := wal.NewSegmentReader(&readerLoop, wal.NewSegmentReaderConfig{
+					Header:   segmentWriter.Header(),
+					FileSize: math.MaxInt64,
+				})
 				if err != nil {
 					b.Fatal(err)
 				}
@@ -181,58 +230,4 @@ func BenchmarkSegmentReader_Next(b *testing.B) {
 			}
 		}
 	}
-}
-
-// SegmentReaderFileLoop provides a stub for the segment file which returns the same data over and over again in an
-// endless loop. It allows us to run large scale benchmarks without having to provide an actual big file on disk or
-// memory.
-type SegmentReaderFileLoop struct {
-	Data   []byte
-	Offset int
-}
-
-// SegmentReaderFileLoop implements SegmentReaderFile.
-var _ wal.SegmentReaderFile = (*SegmentReaderFileLoop)(nil)
-
-func (s *SegmentReaderFileLoop) Read(p []byte) (int, error) {
-	copyBytes := min(len(p), len(s.Data)-s.Offset)
-	copy(p, s.Data[s.Offset:s.Offset+copyBytes])
-	s.Offset += copyBytes
-	if s.Offset >= len(s.Data) {
-		s.Offset = 0
-	}
-	return copyBytes, nil
-}
-
-func (s *SegmentReaderFileLoop) Close() error {
-	return nil
-}
-
-func (s *SegmentReaderFileLoop) Seek(offset int64, whence int) (int64, error) {
-	return offset, nil
-}
-
-func (s *SegmentReaderFileLoop) Name() string {
-	return "in-memory-loop"
-}
-
-// SegmentWriterFileRecorder provides a stub for a segment file which records what is written to it in memory. It allows
-// us to use a SegmentWriter to prepare a buffer which can then be used by SegmentReaderFileLoop to serve read requests.
-type SegmentWriterFileRecorder struct {
-	bytes.Buffer
-}
-
-// SegmentWriterFileRecorder implements SegmentWriterFile.
-var _ wal.SegmentWriterFile = (*SegmentWriterFileRecorder)(nil)
-
-func (s *SegmentWriterFileRecorder) Close() error {
-	return nil
-}
-
-func (s *SegmentWriterFileRecorder) Sync() error {
-	return nil
-}
-
-func (s *SegmentWriterFileRecorder) Name() string {
-	return "in-memory-recorder"
 }

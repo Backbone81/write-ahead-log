@@ -32,7 +32,7 @@ func (e EntryChecksumType) String() string {
 	case EntryChecksumTypeCrc64:
 		return "crc64"
 	default:
-		return "unknown"
+		return "unknown" //nolint:goconst
 	}
 }
 

@@ -1,6 +1,7 @@
 package wal_test
 
 import (
+	"crypto/rand"
 	"fmt"
 	"os"
 	"testing"
@@ -12,72 +13,102 @@ import (
 )
 
 var _ = Describe("SegmentWriter", func() {
-	var dir string
+	for _, entryLengthEncoding := range wal.EntryLengthEncodings {
+		for _, entryChecksumType := range wal.EntryChecksumTypes {
+			for _, syncPolicyType := range wal.SyncPolicyTypes {
+				Context(fmt.Sprintf("With length encoding %s and entry checksum %s through sync policy %s", entryLengthEncoding, entryChecksumType, syncPolicyType), func() {
+					var dir string
 
-	BeforeEach(func() {
-		var err error
-		dir, err = os.MkdirTemp("", "test-segment-writer-*")
-		Expect(err).ToNot(HaveOccurred())
-	})
+					BeforeEach(func() {
+						var err error
+						dir, err = os.MkdirTemp("", "test-segment-writer-*")
+						Expect(err).ToNot(HaveOccurred())
+					})
 
-	AfterEach(func() {
-		Expect(os.RemoveAll(dir)).To(Succeed())
-	})
+					AfterEach(func() {
+						Expect(os.RemoveAll(dir)).To(Succeed())
+					})
 
-	It("should create a new segment file", func() {
-		entriesBefore, err := os.ReadDir(dir)
-		Expect(err).ToNot(HaveOccurred())
+					It("should create a new segment file", func() {
+						entriesBefore, err := os.ReadDir(dir)
+						Expect(err).ToNot(HaveOccurred())
 
-		writer, err := wal.CreateSegment(dir, 0, wal.DefaultSegmentSize, &wal.SyncPolicyNone{})
-		Expect(err).ToNot(HaveOccurred())
-		defer func() {
-			Expect(writer.Close()).To(Succeed())
-		}()
+						writer, err := wal.CreateSegment(dir, 0, wal.CreateSegmentConfig{
+							PreAllocationSize:   wal.DefaultSegmentSize,
+							EntryLengthEncoding: entryLengthEncoding,
+							EntryChecksumType:   entryChecksumType,
+							SyncPolicyType:      syncPolicyType,
+						})
+						Expect(err).ToNot(HaveOccurred())
+						defer func() {
+							Expect(writer.Close()).To(Succeed())
+						}()
 
-		entriesAfter, err := os.ReadDir(dir)
-		Expect(err).ToNot(HaveOccurred())
-		Expect(entriesAfter).To(HaveLen(len(entriesBefore) + 1))
-	})
+						entriesAfter, err := os.ReadDir(dir)
+						Expect(err).ToNot(HaveOccurred())
+						Expect(entriesAfter).To(HaveLen(len(entriesBefore) + 1))
+					})
 
-	It("should write to the segment file", func() {
-		writer, err := wal.CreateSegment(dir, 0, wal.DefaultSegmentSize, &wal.SyncPolicyNone{})
-		Expect(err).ToNot(HaveOccurred())
-		defer func() {
-			Expect(writer.Close()).To(Succeed())
-		}()
+					It("should write to the segment file", func() {
+						writer, err := wal.CreateSegment(dir, 0, wal.CreateSegmentConfig{
+							PreAllocationSize:   wal.DefaultSegmentSize,
+							EntryLengthEncoding: entryLengthEncoding,
+							EntryChecksumType:   entryChecksumType,
+							SyncPolicyType:      syncPolicyType,
+						})
+						Expect(err).ToNot(HaveOccurred())
+						defer func() {
+							Expect(writer.Close()).To(Succeed())
+						}()
 
-		Expect(writer.AppendEntry([]byte("foo"))).To(Succeed())
-	})
+						for range 1024 {
+							var data [1024]byte
+							Expect(rand.Read(data[:])).Error().ToNot(HaveOccurred())
+							Expect(writer.AppendEntry(data[:])).Error().ToNot(HaveOccurred())
+						}
+					})
+				})
+			}
+		}
+	}
 
 	It("should correctly report sequence numbers", func() {
-		writer, err := wal.CreateSegment(dir, 7, wal.DefaultSegmentSize, &wal.SyncPolicyNone{})
+		writer, err := wal.NewSegmentWriter(&SegmentWriterFileDiscard{}, wal.NewSegmentWriterConfig{
+			Header:         wal.DefaultHeader,
+			Offset:         wal.HeaderSize,
+			SyncPolicyType: wal.DefaultSyncPolicy,
+		})
 		Expect(err).ToNot(HaveOccurred())
 		defer func() {
 			Expect(writer.Close()).To(Succeed())
 		}()
 
-		Expect(writer.NextSequenceNumber()).To(Equal(uint64(7)))
-		Expect(writer.AppendEntry([]byte("foo"))).To(Succeed())
-		Expect(writer.NextSequenceNumber()).To(Equal(uint64(8)))
-		Expect(writer.AppendEntry([]byte("foo"))).To(Succeed())
-		Expect(writer.NextSequenceNumber()).To(Equal(uint64(9)))
-		Expect(writer.AppendEntry([]byte("foo"))).To(Succeed())
-		Expect(writer.NextSequenceNumber()).To(Equal(uint64(10)))
+		Expect(writer.NextSequenceNumber()).To(Equal(uint64(0)))
+		Expect(writer.AppendEntry([]byte("foo"))).Error().ToNot(HaveOccurred())
+		Expect(writer.NextSequenceNumber()).To(Equal(uint64(1)))
+		Expect(writer.AppendEntry([]byte("foo"))).Error().ToNot(HaveOccurred())
+		Expect(writer.NextSequenceNumber()).To(Equal(uint64(2)))
+		Expect(writer.AppendEntry([]byte("foo"))).Error().ToNot(HaveOccurred())
+		Expect(writer.NextSequenceNumber()).To(Equal(uint64(3)))
 	})
 
 	It("should correctly report offsets", func() {
-		writer, err := wal.CreateSegment(dir, 0, wal.DefaultSegmentSize, &wal.SyncPolicyNone{})
+		writer, err := wal.NewSegmentWriter(&SegmentWriterFileDiscard{}, wal.NewSegmentWriterConfig{
+			Header:         wal.DefaultHeader,
+			Offset:         wal.HeaderSize,
+			SyncPolicyType: wal.SyncPolicyTypeNone,
+		})
 		Expect(err).ToNot(HaveOccurred())
 		defer func() {
 			Expect(writer.Close()).To(Succeed())
 		}()
 
 		Expect(writer.Offset()).To(Equal(int64(wal.HeaderSize)))
-		Expect(writer.AppendEntry([]byte("foo"))).To(Succeed())
+		Expect(writer.AppendEntry([]byte("foo"))).Error().ToNot(HaveOccurred())
 		Expect(writer.Offset()).To(Equal(int64(wal.HeaderSize + 1*(4+3+4))))
-		Expect(writer.AppendEntry([]byte("foo"))).To(Succeed())
+		Expect(writer.AppendEntry([]byte("foo"))).Error().ToNot(HaveOccurred())
 		Expect(writer.Offset()).To(Equal(int64(wal.HeaderSize + 2*(4+3+4))))
-		Expect(writer.AppendEntry([]byte("foo"))).To(Succeed())
+		Expect(writer.AppendEntry([]byte("foo"))).Error().ToNot(HaveOccurred())
 		Expect(writer.Offset()).To(Equal(int64(wal.HeaderSize + 3*(4+3+4))))
 	})
 })
@@ -85,49 +116,30 @@ var _ = Describe("SegmentWriter", func() {
 func BenchmarkSegmentWriter_AppendEntry(b *testing.B) {
 	for _, entryLengthEncoding := range wal.EntryLengthEncodings {
 		for _, entryChecksumType := range wal.EntryChecksumTypes {
-			for _, dataSize := range []int{0, 1, 2, 4, 8, 16} {
-				data := make([]byte, dataSize*1024)
-				segmentWriter, err := wal.NewSegmentWriter(&SegmentWriterFileDiscard{}, wal.Header{
-					Magic:               wal.Magic,
-					Version:             wal.HeaderVersion,
-					EntryLengthEncoding: entryLengthEncoding,
-					EntryChecksumType:   entryChecksumType,
-					FirstSequenceNumber: 0,
-				}, 0, 0, &wal.SyncPolicyNone{})
-				if err != nil {
-					b.Fatal(err)
-				}
-				b.Run(fmt.Sprintf("%s %s %d KB", entryLengthEncoding, entryChecksumType, dataSize), func(b *testing.B) {
-					for b.Loop() {
-						if err := segmentWriter.AppendEntry(data); err != nil {
-							b.Fatal(err)
-						}
+			for _, syncPolicyType := range wal.SyncPolicyTypes {
+				for _, dataSize := range []int{0, 1, 2, 4, 8, 16} {
+					data := make([]byte, dataSize*1024)
+					segmentWriter, err := wal.NewSegmentWriter(&SegmentWriterFileDiscard{}, wal.NewSegmentWriterConfig{
+						Header: wal.Header{
+							Magic:               wal.Magic,
+							Version:             wal.HeaderVersion,
+							EntryLengthEncoding: entryLengthEncoding,
+							EntryChecksumType:   entryChecksumType,
+						},
+						SyncPolicyType: syncPolicyType,
+					})
+					if err != nil {
+						b.Fatal(err)
 					}
-				})
+					b.Run(fmt.Sprintf("%s %s %s %d KB", entryLengthEncoding, entryChecksumType, syncPolicyType, dataSize), func(b *testing.B) {
+						for b.Loop() {
+							if _, err := segmentWriter.AppendEntry(data); err != nil {
+								b.Fatal(err)
+							}
+						}
+					})
+				}
 			}
 		}
 	}
-}
-
-// SegmentWriterFileDiscard provides a stub for a segment file which discards all data. It allows us to run large scale
-// benchmarks without filling up the disk or memory.
-type SegmentWriterFileDiscard struct{}
-
-// SegmentWriterFileDiscard implements SegmentWriterFile.
-var _ wal.SegmentWriterFile = (*SegmentWriterFileDiscard)(nil)
-
-func (s *SegmentWriterFileDiscard) Write(p []byte) (int, error) {
-	return len(p), nil
-}
-
-func (s *SegmentWriterFileDiscard) Close() error {
-	return nil
-}
-
-func (s *SegmentWriterFileDiscard) Sync() error {
-	return nil
-}
-
-func (s *SegmentWriterFileDiscard) Name() string {
-	return "in-memory-discard"
 }
