@@ -25,21 +25,26 @@ func (w *Writer) Close() error {
 	return w.segmentWriter.Close()
 }
 
-func (w *Writer) RolloverIfNeeded(syncPolicyType SyncPolicyType) error {
+func (w *Writer) RolloverIfNeeded(syncPolicy SyncPolicy) error {
 	if w.segmentWriter.Offset() < w.maxSegmentSize {
 		// We did not yet reach the desired maximum segment size. We can continue with what we have at hand.
 		return nil
 	}
 
-	return w.Rollover(syncPolicyType)
+	return w.Rollover(syncPolicy)
 }
 
-func (w *Writer) Rollover(syncPolicyType SyncPolicyType) error {
+func (w *Writer) Rollover(syncPolicy SyncPolicy) error {
 	if err := w.segmentWriter.Close(); err != nil {
 		return err
 	}
 
-	nextSegmentWriter, err := CreateSegment(path.Dir(w.segmentWriter.FilePath()), w.segmentWriter.NextSequenceNumber(), DefaultCreateSegmentConfig)
+	nextSegmentWriter, err := CreateSegment(path.Dir(w.segmentWriter.FilePath()), w.segmentWriter.NextSequenceNumber(), CreateSegmentConfig{
+		PreAllocationSize:   DefaultPreAllocationSize,
+		EntryLengthEncoding: DefaultEntryLengthEncoding,
+		EntryChecksumType:   DefaultEntryChecksumType,
+		SyncPolicy:          NewSyncPolicyNone(),
+	})
 	if err != nil {
 		return err
 	}

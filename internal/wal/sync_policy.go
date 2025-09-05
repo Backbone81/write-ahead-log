@@ -1,65 +1,26 @@
 package wal
 
-import "errors"
-
-var ErrSyncPolicyUnsupported = errors.New("unsupported WAL sync policy")
-
-// SyncPolicyType describes the type of sync policy to apply when writing to the segment file.
-type SyncPolicyType int
-
-const (
-	SyncPolicyTypeNone SyncPolicyType = iota
-	SyncPolicyTypeImmediate
-	SyncPolicyTypePeriodic
-	SyncPolicyTypeGrouped
-)
-
-// String returns a string representation of the sync policy type.
-func (s SyncPolicyType) String() string {
-	switch s {
-	case SyncPolicyTypeNone:
-		return "none"
-	case SyncPolicyTypeImmediate:
-		return "immediate"
-	case SyncPolicyTypePeriodic:
-		return "periodic"
-	case SyncPolicyTypeGrouped:
-		return "grouped"
-	default:
-		return "unknown"
-	}
-}
-
-// SyncPolicyTypes provides a list of supported sync policies. Helpful for writing tests and benchmarks which iterate
-// over all possibilities.
-var SyncPolicyTypes = []SyncPolicyType{
-	SyncPolicyTypeNone,
-	SyncPolicyTypeImmediate,
-	SyncPolicyTypePeriodic,
-	SyncPolicyTypeGrouped,
-}
-
-// DefaultSyncPolicy is the sync policy type which should work fine for most use cases.
-const DefaultSyncPolicy = SyncPolicyTypeGrouped
-
 // SyncPolicy is the interface every sync policy needs to implement.
 type SyncPolicy interface {
-	EntryAppended(sequenceNumber uint64) error
-	Close() error
-}
+	// Startup is always called on a sync policy before the file is written to. It can be used for setting up timers or
+	// go routines.
+	// The file is the file which the sync policy is expected to flush. The policy is expected to store the file
+	// internally for later use.
+	Startup(file SegmentWriterFile) error
 
-// GetSyncPolicy returns an instance of the sync policy matching the sync policy type.
-func GetSyncPolicy(syncPolicyType SyncPolicyType) (SyncPolicy, error) {
-	switch syncPolicyType {
-	case SyncPolicyTypeNone:
-		return &SyncPolicyNone{}, nil
-	case SyncPolicyTypeImmediate:
-		return &SyncPolicyImmediate{}, nil
-	case SyncPolicyTypePeriodic:
-		return &SyncPolicyPeriodic{}, nil
-	case SyncPolicyTypeGrouped:
-		return &SyncPolicyGrouped{}, nil
-	default:
-		return nil, ErrSyncPolicyUnsupported
-	}
+	// EntryAppended is called after every entry has been written to the segment file. The sequence number is the number
+	// of the entry which was written. The policy can decide if it wants to flush immediately or start some timer for
+	// an asynchronous flush.
+	EntryAppended(sequenceNumber uint64) error
+
+	// Shutdown is always called before the segment file is closed for writing. The policy should shut down any go
+	// routines it started during Startup.
+	Shutdown() error
+
+	// Clone returns a new instance of the policy which has the identical settings but is ready to run Startup again.
+	// It is called whenever the current segment file is rolled over and a new segment writer is created.
+	Clone() SyncPolicy
+
+	// String returns the name of the sync policy. This is useful for logging or error messages.
+	String() string
 }

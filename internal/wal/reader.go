@@ -119,8 +119,8 @@ func (r *Reader) Err() error {
 	return r.err
 }
 
-func (r *Reader) ToWriter(maxSegmentSize int64, syncPolicyType SyncPolicyType) (*Writer, error) {
-	newSegmentWriter, err := r.segmentReader.ToWriter(syncPolicyType)
+func (r *Reader) ToWriter(maxSegmentSize int64, syncPolicy SyncPolicy) (*Writer, error) {
+	newSegmentWriter, err := r.segmentReader.ToWriter(syncPolicy)
 	if err != nil {
 		return nil, err
 	}
@@ -128,7 +128,7 @@ func (r *Reader) ToWriter(maxSegmentSize int64, syncPolicyType SyncPolicyType) (
 	newWriter := Writer{
 		segmentWriter: newSegmentWriter,
 	}
-	if err := newWriter.RolloverIfNeeded(syncPolicyType); err != nil {
+	if err := newWriter.RolloverIfNeeded(syncPolicy); err != nil {
 		return nil, err
 	}
 	return &newWriter, nil

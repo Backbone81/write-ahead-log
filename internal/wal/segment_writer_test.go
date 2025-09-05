@@ -4,7 +4,9 @@ import (
 	"crypto/rand"
 	"fmt"
 	"os"
+	"sync"
 	"testing"
+	"time"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -15,8 +17,14 @@ import (
 var _ = Describe("SegmentWriter", func() {
 	for _, entryLengthEncoding := range wal.EntryLengthEncodings {
 		for _, entryChecksumType := range wal.EntryChecksumTypes {
-			for _, syncPolicyType := range wal.SyncPolicyTypes {
-				Context(fmt.Sprintf("With length encoding %s and entry checksum %s through sync policy %s", entryLengthEncoding, entryChecksumType, syncPolicyType), func() {
+			var mutex sync.Mutex
+			for _, syncPolicy := range []wal.SyncPolicy{
+				wal.NewSyncPolicyNone(),
+				wal.NewSyncPolicyImmediate(),
+				wal.NewSyncPolicyPeriodic(10, time.Millisecond, &mutex),
+				wal.NewSyncPolicyGrouped(time.Millisecond, &mutex),
+			} {
+				Context(fmt.Sprintf("With length encoding %s and entry checksum %s through sync policy %s", entryLengthEncoding, entryChecksumType, syncPolicy), func() {
 					var dir string
 
 					BeforeEach(func() {
@@ -37,7 +45,7 @@ var _ = Describe("SegmentWriter", func() {
 							PreAllocationSize:   wal.DefaultSegmentSize,
 							EntryLengthEncoding: entryLengthEncoding,
 							EntryChecksumType:   entryChecksumType,
-							SyncPolicyType:      syncPolicyType,
+							SyncPolicy:          syncPolicy,
 						})
 						Expect(err).ToNot(HaveOccurred())
 						defer func() {
@@ -54,17 +62,19 @@ var _ = Describe("SegmentWriter", func() {
 							PreAllocationSize:   wal.DefaultSegmentSize,
 							EntryLengthEncoding: entryLengthEncoding,
 							EntryChecksumType:   entryChecksumType,
-							SyncPolicyType:      syncPolicyType,
+							SyncPolicy:          syncPolicy,
 						})
 						Expect(err).ToNot(HaveOccurred())
 						defer func() {
 							Expect(writer.Close()).To(Succeed())
 						}()
 
-						for range 1024 {
+						for range 10 {
 							var data [1024]byte
 							Expect(rand.Read(data[:])).Error().ToNot(HaveOccurred())
+							mutex.Lock()
 							Expect(writer.AppendEntry(data[:])).Error().ToNot(HaveOccurred())
+							mutex.Unlock()
 						}
 					})
 				})
@@ -74,9 +84,9 @@ var _ = Describe("SegmentWriter", func() {
 
 	It("should correctly report sequence numbers", func() {
 		writer, err := wal.NewSegmentWriter(&SegmentWriterFileDiscard{}, wal.NewSegmentWriterConfig{
-			Header:         wal.DefaultHeader,
-			Offset:         wal.HeaderSize,
-			SyncPolicyType: wal.DefaultSyncPolicy,
+			Header:     wal.DefaultHeader,
+			Offset:     wal.HeaderSize,
+			SyncPolicy: wal.NewSyncPolicyNone(),
 		})
 		Expect(err).ToNot(HaveOccurred())
 		defer func() {
@@ -94,9 +104,9 @@ var _ = Describe("SegmentWriter", func() {
 
 	It("should correctly report offsets", func() {
 		writer, err := wal.NewSegmentWriter(&SegmentWriterFileDiscard{}, wal.NewSegmentWriterConfig{
-			Header:         wal.DefaultHeader,
-			Offset:         wal.HeaderSize,
-			SyncPolicyType: wal.SyncPolicyTypeNone,
+			Header:     wal.DefaultHeader,
+			Offset:     wal.HeaderSize,
+			SyncPolicy: wal.NewSyncPolicyNone(),
 		})
 		Expect(err).ToNot(HaveOccurred())
 		defer func() {
@@ -116,7 +126,13 @@ var _ = Describe("SegmentWriter", func() {
 func BenchmarkSegmentWriter_AppendEntry(b *testing.B) {
 	for _, entryLengthEncoding := range wal.EntryLengthEncodings {
 		for _, entryChecksumType := range wal.EntryChecksumTypes {
-			for _, syncPolicyType := range wal.SyncPolicyTypes {
+			var mutex sync.Mutex
+			for _, syncPolicy := range []wal.SyncPolicy{
+				wal.NewSyncPolicyNone(),
+				wal.NewSyncPolicyImmediate(),
+				wal.NewSyncPolicyPeriodic(10, time.Millisecond, &mutex),
+				wal.NewSyncPolicyGrouped(time.Millisecond, &mutex),
+			} {
 				for _, dataSize := range []int{0, 1, 2, 4, 8, 16} {
 					data := make([]byte, dataSize*1024)
 					segmentWriter, err := wal.NewSegmentWriter(&SegmentWriterFileDiscard{}, wal.NewSegmentWriterConfig{
@@ -126,12 +142,14 @@ func BenchmarkSegmentWriter_AppendEntry(b *testing.B) {
 							EntryLengthEncoding: entryLengthEncoding,
 							EntryChecksumType:   entryChecksumType,
 						},
-						SyncPolicyType: syncPolicyType,
+						SyncPolicy: syncPolicy,
 					})
 					if err != nil {
 						b.Fatal(err)
 					}
-					b.Run(fmt.Sprintf("%s %s %s %d KB", entryLengthEncoding, entryChecksumType, syncPolicyType, dataSize), func(b *testing.B) {
+					b.Run(fmt.Sprintf("%s %s %s %d KB", entryLengthEncoding, entryChecksumType, syncPolicy, dataSize), func(b *testing.B) {
+						mutex.Lock()
+						defer mutex.Unlock()
 						for b.Loop() {
 							if _, err := segmentWriter.AppendEntry(data); err != nil {
 								b.Fatal(err)

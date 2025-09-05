@@ -65,17 +65,12 @@ type CreateSegmentConfig struct {
 	// EntryChecksumType is the type of entry checksum to use.
 	EntryChecksumType EntryChecksumType
 
-	// SyncPolicyType is the sync policy to apply to entry writes.
-	SyncPolicyType SyncPolicyType
+	// SyncPolicy is the sync policy to apply to entry writes.
+	SyncPolicy SyncPolicy
 }
 
-// DefaultCreateSegmentConfig is a CreateSegmentConfig which should work fine for most use cases.
-var DefaultCreateSegmentConfig = CreateSegmentConfig{
-	PreAllocationSize:   64 * 1024 * 1024,
-	EntryLengthEncoding: DefaultEntryLengthEncoding,
-	EntryChecksumType:   DefaultEntryChecksumType,
-	SyncPolicyType:      DefaultSyncPolicy,
-}
+// DefaultPreAllocationSize is a segment size which should work well for most use cases.
+const DefaultPreAllocationSize = 64 * 1024 * 1024
 
 // CreateSegment creates a new segment file in the given directory. It will create the new file with the file extension
 // ".new" appended to the file name and rename it after the header has been written to. This ensures that the new
@@ -134,7 +129,7 @@ func CreateSegment(directory string, firstSequenceNumber uint64, createSegmentCo
 		Header:             header,
 		Offset:             offset,
 		NextSequenceNumber: firstSequenceNumber,
-		SyncPolicyType:     createSegmentConfig.SyncPolicyType,
+		SyncPolicy:         createSegmentConfig.SyncPolicy,
 	})
 }
 
@@ -149,8 +144,8 @@ type NewSegmentWriterConfig struct {
 	// NextSequenceNumber is the sequence number the next entry will receive.
 	NextSequenceNumber uint64
 
-	// SyncPolicyType describes the way written entries any synced to stable storage.
-	SyncPolicyType SyncPolicyType
+	// SyncPolicy describes the way written entries any synced to stable storage.
+	SyncPolicy SyncPolicy
 }
 
 // NewSegmentWriter creates a SegmentWriter from a file which is already open.
@@ -165,8 +160,8 @@ func NewSegmentWriter(file SegmentWriterFile, newSegmentWriterConfig NewSegmentW
 		return nil, err
 	}
 
-	syncPolicy, err := GetSyncPolicy(newSegmentWriterConfig.SyncPolicyType)
-	if err != nil {
+	syncPolicy := newSegmentWriterConfig.SyncPolicy.Clone()
+	if err := syncPolicy.Startup(file); err != nil {
 		return nil, err
 	}
 
@@ -233,7 +228,7 @@ func (w *SegmentWriter) AppendEntry(data []byte) (uint64, error) {
 
 // Close flushes all pending changes to disk and closes the file.
 func (w *SegmentWriter) Close() error {
-	syncErr := w.syncPolicy.Close()
+	syncErr := w.syncPolicy.Shutdown()
 	closeErr := w.file.Close()
 	return errors.Join(syncErr, closeErr)
 }

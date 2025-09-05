@@ -69,7 +69,7 @@ type SegmentReaderValue struct {
 
 // OpenSegment creates a new segment reader for the file path given as parameter.
 //
-// To avoid resources leaking, the returned SegmentReader needs to be closed by calling Close().
+// To avoid resources leaking, the returned SegmentReader needs to be closed by calling Shutdown().
 // Returns an error if the file cannot be opened, read from or the header is malformed.
 func OpenSegment(directory string, firstSequenceNumber uint64) (*SegmentReader, error) {
 	segmentFilePath := path.Join(directory, segmentFileName(firstSequenceNumber))
@@ -264,7 +264,7 @@ func (r *SegmentReader) Err() error {
 // ToWriter returns a SegmentWriter to append to the open segment file. You must have read all entries of the segment
 // before you call this method. Otherwise, it will fail. After a call to ToWriter(), you cannot use the SegmentReader
 // anymore.
-func (r *SegmentReader) ToWriter(syncPolicyType SyncPolicyType) (*SegmentWriter, error) {
+func (r *SegmentReader) ToWriter(syncPolicy SyncPolicy) (*SegmentWriter, error) {
 	if !errors.Is(r.err, ErrEntryNone) {
 		return nil, errors.New("segment needs to be read until the last entry is reached")
 	}
@@ -278,7 +278,7 @@ func (r *SegmentReader) ToWriter(syncPolicyType SyncPolicyType) (*SegmentWriter,
 		Header:             r.header,
 		Offset:             r.offset,
 		NextSequenceNumber: r.nextSequenceNumber,
-		SyncPolicyType:     syncPolicyType,
+		SyncPolicy:         syncPolicy,
 	})
 	if err != nil {
 		return nil, err

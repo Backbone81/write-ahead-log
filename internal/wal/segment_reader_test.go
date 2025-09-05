@@ -5,7 +5,9 @@ import (
 	"io"
 	"math"
 	"os"
+	"sync"
 	"testing"
+	"time"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -16,8 +18,14 @@ import (
 var _ = Describe("SegmentReader", func() {
 	for _, entryLengthEncoding := range wal.EntryLengthEncodings {
 		for _, entryChecksumType := range wal.EntryChecksumTypes {
-			for _, syncPolicyType := range wal.SyncPolicyTypes {
-				Context(fmt.Sprintf("With length encoding %s and entry checksum %s through sync policy %s", entryLengthEncoding, entryChecksumType, syncPolicyType), func() {
+			var mutex sync.Mutex
+			for _, syncPolicy := range []wal.SyncPolicy{
+				wal.NewSyncPolicyNone(),
+				wal.NewSyncPolicyImmediate(),
+				wal.NewSyncPolicyPeriodic(10, time.Millisecond, &mutex),
+				wal.NewSyncPolicyGrouped(time.Millisecond, &mutex),
+			} {
+				Context(fmt.Sprintf("With length encoding %s and entry checksum %s through sync policy %s", entryLengthEncoding, entryChecksumType, syncPolicy), func() {
 					var dir string
 
 					BeforeEach(func() {
@@ -35,7 +43,7 @@ var _ = Describe("SegmentReader", func() {
 							PreAllocationSize:   0,
 							EntryLengthEncoding: entryLengthEncoding,
 							EntryChecksumType:   entryChecksumType,
-							SyncPolicyType:      syncPolicyType,
+							SyncPolicy:          syncPolicy,
 						})
 						Expect(err).ToNot(HaveOccurred())
 						Expect(writer.Close()).To(Succeed())
@@ -55,12 +63,14 @@ var _ = Describe("SegmentReader", func() {
 							PreAllocationSize:   0,
 							EntryLengthEncoding: entryLengthEncoding,
 							EntryChecksumType:   entryChecksumType,
-							SyncPolicyType:      syncPolicyType,
+							SyncPolicy:          syncPolicy,
 						})
 						Expect(err).ToNot(HaveOccurred())
+						mutex.Lock()
 						Expect(writer.AppendEntry([]byte("foo"))).Error().ToNot(HaveOccurred())
 						Expect(writer.AppendEntry([]byte("bar"))).Error().ToNot(HaveOccurred())
 						Expect(writer.AppendEntry([]byte("baz"))).Error().ToNot(HaveOccurred())
+						mutex.Unlock()
 						Expect(writer.Close()).To(Succeed())
 
 						reader, err := wal.OpenSegment(dir, 0)
@@ -99,7 +109,7 @@ var _ = Describe("SegmentReader", func() {
 							PreAllocationSize:   wal.DefaultSegmentSize,
 							EntryLengthEncoding: entryLengthEncoding,
 							EntryChecksumType:   entryChecksumType,
-							SyncPolicyType:      syncPolicyType,
+							SyncPolicy:          syncPolicy,
 						})
 						Expect(err).ToNot(HaveOccurred())
 						Expect(writer.Close()).To(Succeed())
@@ -122,9 +132,9 @@ var _ = Describe("SegmentReader", func() {
 	It("should correctly report sequence numbers", func() {
 		var recorder SegmentWriterFileRecorder
 		writer, err := wal.NewSegmentWriter(&recorder, wal.NewSegmentWriterConfig{
-			Header:         wal.DefaultHeader,
-			Offset:         wal.HeaderSize,
-			SyncPolicyType: wal.SyncPolicyTypeNone,
+			Header:     wal.DefaultHeader,
+			Offset:     wal.HeaderSize,
+			SyncPolicy: wal.NewSyncPolicyNone(),
 		})
 		Expect(err).ToNot(HaveOccurred())
 		Expect(writer.AppendEntry([]byte("foo"))).Error().ToNot(HaveOccurred())
@@ -155,9 +165,9 @@ var _ = Describe("SegmentReader", func() {
 	It("should correctly report offsets", func() {
 		var recorder SegmentWriterFileRecorder
 		writer, err := wal.NewSegmentWriter(&recorder, wal.NewSegmentWriterConfig{
-			Header:         wal.DefaultHeader,
-			Offset:         wal.HeaderSize,
-			SyncPolicyType: wal.SyncPolicyTypeNone,
+			Header:     wal.DefaultHeader,
+			Offset:     wal.HeaderSize,
+			SyncPolicy: wal.NewSyncPolicyNone(),
 		})
 		Expect(err).ToNot(HaveOccurred())
 		Expect(writer.AppendEntry([]byte("foo"))).Error().ToNot(HaveOccurred())
@@ -193,14 +203,14 @@ func BenchmarkSegmentReader_Next(b *testing.B) {
 			for _, dataSize := range []int{0, 1, 2, 4, 8, 16} {
 				data := make([]byte, dataSize*1024)
 				var recorder SegmentWriterFileRecorder
-				segmentWriter, err := wal.NewSegmentWriter(&SegmentWriterFileDiscard{}, wal.NewSegmentWriterConfig{
+				segmentWriter, err := wal.NewSegmentWriter(&recorder, wal.NewSegmentWriterConfig{
 					Header: wal.Header{
 						Magic:               wal.Magic,
 						Version:             wal.HeaderVersion,
 						EntryLengthEncoding: entryLengthEncoding,
 						EntryChecksumType:   entryChecksumType,
 					},
-					SyncPolicyType: wal.SyncPolicyTypeNone,
+					SyncPolicy: wal.NewSyncPolicyNone(),
 				})
 				if err != nil {
 					b.Fatal(err)

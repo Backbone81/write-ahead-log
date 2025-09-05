@@ -2,44 +2,50 @@ package wal
 
 import (
 	"fmt"
-	"os"
+	"log"
 	"sync"
 	"time"
 )
 
 // SyncPolicyPeriodic is flushing segments to disk after having written some number of entries, or after some time
 // interval has passed.
+// Access to this sync policy needs to be synchronized externally. As it starts a go routine, the external mutex
+// is saved in the struct to use in the go routine for synchronization.
 type SyncPolicyPeriodic struct {
-	file                *os.File
 	syncAfterEntryCount int
-	syncTicker          *time.Ticker
-	shutdown            chan struct{}
-	shutdownWaitGroup   sync.WaitGroup
+	syncEvery           time.Duration
+	mutex               *sync.Mutex
 
-	mutex              sync.Mutex
+	file              SegmentWriterFile
+	syncTicker        *time.Ticker
+	shutdown          chan struct{}
+	shutdownWaitGroup sync.WaitGroup
+
 	unsyncedEntryCount int
 }
 
 // SyncPolicyPeriodic implements SyncPolicy.
 var _ SyncPolicy = (*SyncPolicyPeriodic)(nil)
 
-func NewSyncPolicyPeriodic(file *os.File, syncAfterEntryCount int, syncEvery time.Duration) *SyncPolicyPeriodic {
-	syncTicker := time.NewTicker(syncEvery)
-	result := SyncPolicyPeriodic{
-		file:                file,
+// NewSyncPolicyPeriodic creates a new SyncPolicyPeriodic.
+func NewSyncPolicyPeriodic(syncAfterEntryCount int, syncEvery time.Duration, mutex *sync.Mutex) *SyncPolicyPeriodic {
+	return &SyncPolicyPeriodic{
 		syncAfterEntryCount: syncAfterEntryCount,
-		syncTicker:          syncTicker,
-		shutdown:            make(chan struct{}),
+		syncEvery:           syncEvery,
+		mutex:               mutex,
 	}
-	result.shutdownWaitGroup.Add(1)
-	go result.backgroundTask()
-	return &result
+}
+
+func (s *SyncPolicyPeriodic) Startup(file SegmentWriterFile) error {
+	s.file = file
+	s.syncTicker = time.NewTicker(s.syncEvery)
+	s.shutdown = make(chan struct{})
+	s.shutdownWaitGroup.Add(1)
+	go s.backgroundTask()
+	return nil
 }
 
 func (s *SyncPolicyPeriodic) EntryAppended(sequenceNumber uint64) error {
-	s.mutex.Lock()
-	defer s.mutex.Unlock()
-
 	s.unsyncedEntryCount++
 	if s.unsyncedEntryCount < s.syncAfterEntryCount {
 		return nil
@@ -51,19 +57,28 @@ func (s *SyncPolicyPeriodic) EntryAppended(sequenceNumber uint64) error {
 	return nil
 }
 
-func (s *SyncPolicyPeriodic) Close() error {
+func (s *SyncPolicyPeriodic) Shutdown() error {
 	// Shutdown and wait for the periodic sync to exit.
 	s.syncTicker.Stop()
 	close(s.shutdown)
 	s.shutdownWaitGroup.Wait()
 
-	s.mutex.Lock()
-	defer s.mutex.Unlock()
-
 	if err := s.syncNow(); err != nil {
 		return err
 	}
 	return nil
+}
+
+func (s *SyncPolicyPeriodic) Clone() SyncPolicy {
+	return &SyncPolicyPeriodic{
+		syncAfterEntryCount: s.syncAfterEntryCount,
+		syncEvery:           s.syncEvery,
+		mutex:               s.mutex,
+	}
+}
+
+func (s *SyncPolicyPeriodic) String() string {
+	return "periodic"
 }
 
 func (s *SyncPolicyPeriodic) backgroundTask() {
@@ -83,6 +98,7 @@ func (s *SyncPolicyPeriodic) periodicSync() {
 	defer s.mutex.Unlock()
 
 	if err := s.syncNow(); err != nil {
+		log.Printf("ERROR: Periodic sync failed: %s\n", err)
 		return
 	}
 }
@@ -93,7 +109,7 @@ func (s *SyncPolicyPeriodic) syncNow() error {
 	}
 
 	if err := s.file.Sync(); err != nil {
-		return fmt.Errorf("synching the segment file: %w", err)
+		return fmt.Errorf("flushing WAL segment file: %w", err)
 	}
 	s.unsyncedEntryCount = 0
 	return nil
