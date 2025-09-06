@@ -6,8 +6,6 @@ import (
 	"fmt"
 	"io"
 	"math"
-
-	"write-ahead-log/internal/utils"
 )
 
 var (
@@ -184,12 +182,11 @@ func WriteEntryLengthUvarint(writer io.Writer, buffer []byte, length uint64) err
 // The buffer is required to avoid allocations and should be big enough to hold the encoded length temporarily.
 // The return value is the length decoded from reader and the number of bytes read.
 func ReadEntryLengthUvarint(reader io.Reader, buffer []byte) (uint64, int, error) {
-	myByteReader := utils.NewByteReader(reader, buffer)
-	result, err := binary.ReadUvarint(&myByteReader)
+	result, n, err := ReadUvarint(reader, buffer)
 	if err != nil {
 		return 0, 0, lengthReadError(err)
 	}
-	return result, myByteReader.BytesRead(), nil
+	return result, n, nil
 }
 
 func lengthWriteError(err error) error {

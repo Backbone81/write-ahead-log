@@ -8,7 +8,6 @@ import (
 	"slices"
 	"strconv"
 	"strings"
-	"unsafe"
 )
 
 // segmentFileNamePattern is the file pattern all segment files need to follow.
@@ -70,14 +69,5 @@ func segmentFileName(sequenceNumber uint64) string {
 	return fmt.Sprintf("%020d.wal", sequenceNumber)
 }
 
-var Endian = detectNativeEndian()
-
-// detectNativeEndian determines the native endianness of the system the application is running on.
-func detectNativeEndian() binary.ByteOrder {
-	var i uint16 = 0x1
-	b := (*[2]byte)(unsafe.Pointer(&i)) //nolint:gosec // There is no safe way to detect the system endianness.
-	if b[0] == 0x1 {
-		return binary.LittleEndian
-	}
-	return binary.BigEndian
-}
+// Endian is the endianness the write-ahead log uses for serializing/deserializing integers to file.
+var Endian = binary.LittleEndian
