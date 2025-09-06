@@ -30,3 +30,4 @@ It supports the following features:
 - Collect metrics about what is happening with the wal
 - Provide a CLI for inspecting the WAL and to do maintenance
 - Add checksum to the segment header
+- Introduce read buffer

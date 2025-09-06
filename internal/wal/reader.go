@@ -4,11 +4,12 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"time"
 
 	"write-ahead-log/internal/utils"
 )
 
-// Reader provides functionality to read the write-ahead-log. It abstracts away the fact that the write-ahead-log is
+// Reader provides functionality to read the write-ahead-log. It abstracts away the fact that the write-ahead log is
 // split into multiple segments.
 //
 // Instances of this struct are NOT safe for concurrent use. Either use it on a single Go routine or provide your own
@@ -18,10 +19,6 @@ type Reader struct {
 
 	// The currently active segment reader where we are reading entries from.
 	segmentReader *SegmentReader
-
-	// The sequence number of the entry we read next. We keep track of it to know what the filename of the next segment
-	// file is when we hit the end of the file of the current segment.
-	nextSequenceNumber uint64
 
 	// The error for the last operation. If this is nil, the value of the segment reader can be used. We need to keep
 	// our own err around, because there are errors which can occur when opening segment files. Therefore, we can not
@@ -48,39 +45,52 @@ func NewReader(directory string, sequenceNumber uint64) (*Reader, error) {
 
 	// Move the WAL reader forward until we have reached the desired sequence number.
 	newReader := Reader{
-		segmentReader:      segmentReader,
-		nextSequenceNumber: sequenceNumber,
+		segmentReader: segmentReader,
 	}
-	for newReader.nextSequenceNumber < sequenceNumber && newReader.Next() {
+	for newReader.NextSequenceNumber() < sequenceNumber && newReader.Next() {
 		// Skip entry until we have reached our target sequence number.
 	}
 	if newReader.Err() != nil {
 		// We abort here if we are unable to reach the requested location.
 		return nil, newReader.Err()
 	}
-	if newReader.nextSequenceNumber != sequenceNumber {
+	if newReader.NextSequenceNumber() != sequenceNumber {
 		// This should never happen, when we did not get any error from Next(), but we still double check.
-		return nil, fmt.Errorf("expected to reach sequence number %d but instead reached %d", sequenceNumber, newReader.nextSequenceNumber)
+		return nil, fmt.Errorf("expected to reach sequence number %d but instead reached %d", sequenceNumber, newReader.NextSequenceNumber())
 	}
 
 	return &newReader, nil
 }
 
-func (r *Reader) Close() error {
-	return r.segmentReader.Close()
+// FilePath returns the file path of the file this reader is reading from.
+func (r *Reader) FilePath() string {
+	return r.segmentReader.FilePath()
+}
+
+// Header returns the segment file header.
+func (r *Reader) Header() Header {
+	return r.segmentReader.Header()
+}
+
+// Offset returns the offset in bytes from the start of the file.
+func (r *Reader) Offset() int64 {
+	return r.segmentReader.Offset()
+}
+
+// NextSequenceNumber returns the sequence number the next entry will receive.
+func (r *Reader) NextSequenceNumber() uint64 {
+	return r.segmentReader.NextSequenceNumber()
 }
 
 // Next reports if an entry has been successfully read. When it returns true, Err() returns nil and Value() contains
-// valid data. When it returns false, Err() might be nil if the reader has reached the end of the file, or it might
-// return an error. Value() contains invalid data in that situation.
+// valid data. When it returns false, Err() returns an error. Value() contains invalid data in that situation.
 func (r *Reader) Next() bool {
 	// Forward to our active segment reader first.
 	next := r.segmentReader.Next()
 	r.err = r.segmentReader.Err()
 
 	if next {
-		// The segment reader successfully read an entry. We need to keep track of the next sequence number.
-		r.nextSequenceNumber++
+		// As we successfully read an entry from the segment, there is nothing else to do.
 		return true
 	}
 
@@ -90,15 +100,16 @@ func (r *Reader) Next() bool {
 		return false
 	}
 
-	// We are ready to move on to the next segment reader, so close our active one.
-	if err := r.segmentReader.Close(); err != nil {
-		r.err = fmt.Errorf("closing the segment reader: %w", err)
+	nextSegmentReader, err := OpenSegment(segmentFileName(r.segmentReader.NextSequenceNumber()), r.segmentReader.NextSequenceNumber())
+	if err != nil {
+		// We keep the old error in r.err because this wil still signal that no entry could be read.
 		return false
 	}
 
-	nextSegmentReader, err := OpenSegment(segmentFileName(r.nextSequenceNumber), r.nextSequenceNumber)
-	if err != nil {
-		r.err = err
+	// We are ready to move on to the next segment reader, so close our active one.
+	if err := r.segmentReader.Close(); err != nil {
+		_ = nextSegmentReader.Close()
+		r.err = fmt.Errorf("closing the segment reader: %w", err)
 		return false
 	}
 
@@ -119,17 +130,31 @@ func (r *Reader) Err() error {
 	return r.err
 }
 
-func (r *Reader) ToWriter(maxSegmentSize int64, syncPolicy SyncPolicy) (*Writer, error) {
-	newSegmentWriter, err := r.segmentReader.ToWriter(syncPolicy)
+// ToWriter returns a writer to append entries to the write-ahead log. This is the only way to create a writer, because
+// we can only know if we have reached the end of the segment, when we read all elements from it. Creating a writer
+// will fail, when not all entries were read.
+func (r *Reader) ToWriter(options ...WriterOption) (*Writer, error) {
+	newWriter := Writer{
+		preAllocationSize:   DefaultPreAllocationSize,
+		maxSegmentSize:      DefaultPreAllocationSize,
+		entryLengthEncoding: r.segmentReader.Header().EntryLengthEncoding,
+		entryChecksumType:   r.segmentReader.Header().EntryChecksumType,
+	}
+	newWriter.syncPolicy = NewSyncPolicyGrouped(10*time.Millisecond, &newWriter.Mutex)
+	for _, option := range options {
+		option(&newWriter)
+	}
+
+	newSegmentWriter, err := r.segmentReader.ToWriter(newWriter.syncPolicy)
 	if err != nil {
 		return nil, err
 	}
 
-	newWriter := Writer{
-		segmentWriter: newSegmentWriter,
-	}
-	if err := newWriter.RolloverIfNeeded(syncPolicy); err != nil {
-		return nil, err
-	}
+	newWriter.segmentWriter = newSegmentWriter
 	return &newWriter, nil
+}
+
+// Close closes the underlying reader.
+func (r *Reader) Close() error {
+	return r.segmentReader.Close()
 }

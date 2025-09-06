@@ -106,7 +106,7 @@ var _ = Describe("SegmentReader", func() {
 
 					It("should read a pre-allocated segment file", func() {
 						writer, err := wal.CreateSegment(dir, 0, wal.CreateSegmentConfig{
-							PreAllocationSize:   wal.DefaultSegmentSize,
+							PreAllocationSize:   wal.DefaultPreAllocationSize,
 							EntryLengthEncoding: entryLengthEncoding,
 							EntryChecksumType:   entryChecksumType,
 							SyncPolicy:          syncPolicy,

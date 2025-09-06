@@ -42,7 +42,7 @@ var _ = Describe("SegmentWriter", func() {
 						Expect(err).ToNot(HaveOccurred())
 
 						writer, err := wal.CreateSegment(dir, 0, wal.CreateSegmentConfig{
-							PreAllocationSize:   wal.DefaultSegmentSize,
+							PreAllocationSize:   wal.DefaultPreAllocationSize,
 							EntryLengthEncoding: entryLengthEncoding,
 							EntryChecksumType:   entryChecksumType,
 							SyncPolicy:          syncPolicy,
@@ -59,7 +59,7 @@ var _ = Describe("SegmentWriter", func() {
 
 					It("should write to the segment file", func() {
 						writer, err := wal.CreateSegment(dir, 0, wal.CreateSegmentConfig{
-							PreAllocationSize:   wal.DefaultSegmentSize,
+							PreAllocationSize:   wal.DefaultPreAllocationSize,
 							EntryLengthEncoding: entryLengthEncoding,
 							EntryChecksumType:   entryChecksumType,
 							SyncPolicy:          syncPolicy,
