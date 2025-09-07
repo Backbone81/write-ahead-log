@@ -34,6 +34,7 @@ type Writer struct {
 type WriterOption func(w *Writer)
 
 // WithPreAllocationSize overwrites the default pre-allocation size of new segment files.
+// Can be used with Init and Reader.ToWriter.
 func WithPreAllocationSize(preAllocationSize int64) WriterOption {
 	return func(w *Writer) {
 		w.preAllocationSize = preAllocationSize
@@ -41,6 +42,7 @@ func WithPreAllocationSize(preAllocationSize int64) WriterOption {
 }
 
 // WithMaxSegmentSize overwrites the default maximum segment size which causes rollover into a new segment when reached.
+// Can be used with Reader.ToWriter.
 func WithMaxSegmentSize(maxSegmentSize int64) WriterOption {
 	return func(w *Writer) {
 		w.maxSegmentSize = maxSegmentSize
@@ -48,6 +50,7 @@ func WithMaxSegmentSize(maxSegmentSize int64) WriterOption {
 }
 
 // WithEntryLengthEncoding overwrites the default entry length encoding.
+// Can be used with Init and Reader.ToWriter.
 func WithEntryLengthEncoding(entryLengthEncoding EntryLengthEncoding) WriterOption {
 	return func(w *Writer) {
 		w.entryLengthEncoding = entryLengthEncoding
@@ -55,6 +58,7 @@ func WithEntryLengthEncoding(entryLengthEncoding EntryLengthEncoding) WriterOpti
 }
 
 // WithEntryChecksumType overwrites the default entry checksum type.
+// Can be used with Init and Reader.ToWriter.
 func WithEntryChecksumType(entryChecksumType EntryChecksumType) WriterOption {
 	return func(w *Writer) {
 		w.entryChecksumType = entryChecksumType
@@ -62,6 +66,7 @@ func WithEntryChecksumType(entryChecksumType EntryChecksumType) WriterOption {
 }
 
 // WithSyncPolicyNone overwrites the default sync policy with sync policy none.
+// Can be used with Reader.ToWriter.
 func WithSyncPolicyNone() WriterOption {
 	return func(w *Writer) {
 		w.syncPolicy = NewSyncPolicyNone()
@@ -69,6 +74,7 @@ func WithSyncPolicyNone() WriterOption {
 }
 
 // WithSyncPolicyImmediate overwrites the default sync policy with sync policy immediate.
+// Can be used with Reader.ToWriter.
 func WithSyncPolicyImmediate() WriterOption {
 	return func(w *Writer) {
 		w.syncPolicy = NewSyncPolicyImmediate()
@@ -76,6 +82,7 @@ func WithSyncPolicyImmediate() WriterOption {
 }
 
 // WithSyncPolicyPeriodic overwrites the default sync policy with sync policy periodic.
+// Can be used with Reader.ToWriter.
 func WithSyncPolicyPeriodic(syncAfterEntryCount int, syncEvery time.Duration) WriterOption {
 	return func(w *Writer) {
 		w.syncPolicy = NewSyncPolicyPeriodic(syncAfterEntryCount, syncEvery, &w.Mutex)
@@ -83,6 +90,7 @@ func WithSyncPolicyPeriodic(syncAfterEntryCount int, syncEvery time.Duration) Wr
 }
 
 // WithSyncPolicyGrouped overwrites the default sync policy with sync policy grouped.
+// Can be used with Reader.ToWriter.
 func WithSyncPolicyGrouped(syncAfter time.Duration) WriterOption {
 	return func(w *Writer) {
 		w.syncPolicy = NewSyncPolicyGrouped(syncAfter, &w.Mutex)

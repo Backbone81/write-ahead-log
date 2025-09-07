@@ -133,6 +133,7 @@ func (r *Reader) Err() error {
 // ToWriter returns a writer to append entries to the write-ahead log. This is the only way to create a writer, because
 // we can only know if we have reached the end of the segment, when we read all elements from it. Creating a writer
 // will fail, when not all entries were read.
+// The reader must not be used any more after a call to this function.
 func (r *Reader) ToWriter(options ...WriterOption) (*Writer, error) {
 	newWriter := Writer{
 		preAllocationSize:   DefaultPreAllocationSize,
