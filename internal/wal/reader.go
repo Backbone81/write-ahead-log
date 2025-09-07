@@ -38,7 +38,7 @@ func NewReader(directory string, sequenceNumber uint64) (*Reader, error) {
 
 	// Create a segment reader for the given segment and make sure that the segment file name actually matches to the
 	// first sequence number as documented in the segment header.
-	segmentReader, err := OpenSegment(segmentFileName(segment), segment)
+	segmentReader, err := OpenSegment(directory, segment)
 	if err != nil {
 		return nil, err
 	}
