@@ -22,3 +22,7 @@ prepare:
 	go fmt $(PACKAGE)
 	go vet $(PACKAGE)
 	golangci-lint run --fix
+
+.PHONY: clean
+clean:
+	rm -rf tmp
