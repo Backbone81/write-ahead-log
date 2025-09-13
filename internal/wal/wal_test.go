@@ -176,9 +176,13 @@ var _ = Describe("WAL", func() {
 						Expect(reader.Next()).To(BeFalse())
 
 						By("create writer")
+						var rolloverCount int
 						writer, err := reader.ToWriter(syncPolicy,
 							wal.WithMaxSegmentSize(512),
 							wal.WithPreAllocationSize(512),
+							wal.WithRolloverCallback(func(previousSegment uint64, nextSegment uint64) {
+								rolloverCount++
+							}),
 						)
 						Expect(err).ToNot(HaveOccurred())
 
@@ -190,6 +194,7 @@ var _ = Describe("WAL", func() {
 						// The rollover happens on the first write after we are over the size
 						Expect(writer.AppendEntry([]byte("bar"))).To(Succeed())
 						Expect(writer.FilePath()).ToNot(Equal(initialSegment))
+						Expect(rolloverCount).To(Equal(1))
 
 						Expect(writer.Close()).To(Succeed())
 						writer.Unlock()

@@ -18,6 +18,7 @@ func Init(directory string, options ...WriterOption) error {
 		entryLengthEncoding: DefaultEntryLengthEncoding,
 		entryChecksumType:   DefaultEntryChecksumType,
 		syncPolicy:          NewSyncPolicyImmediate(),
+		rolloverCallback:    DefaultRolloverCallback,
 	}
 	for _, option := range options {
 		option(&newWriter)

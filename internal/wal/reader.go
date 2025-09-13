@@ -140,6 +140,7 @@ func (r *Reader) ToWriter(options ...WriterOption) (*Writer, error) {
 		maxSegmentSize:      DefaultPreAllocationSize,
 		entryLengthEncoding: r.segmentReader.Header().EntryLengthEncoding,
 		entryChecksumType:   r.segmentReader.Header().EntryChecksumType,
+		rolloverCallback:    DefaultRolloverCallback,
 	}
 	newWriter.syncPolicy = NewSyncPolicyGrouped(10*time.Millisecond, &newWriter.Mutex)
 	for _, option := range options {

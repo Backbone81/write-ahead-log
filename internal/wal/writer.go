@@ -28,7 +28,16 @@ type Writer struct {
 	entryLengthEncoding EntryLengthEncoding
 	entryChecksumType   EntryChecksumType
 	syncPolicy          SyncPolicy
+	rolloverCallback    RolloverCallback
 }
+
+// RolloverCallback is the callback users can register for getting notified when a rollover of a segment file happens.
+// The parameters are the previous and the next segment identified by the first sequence number of entries stored
+// inside.
+type RolloverCallback func(previousSegment uint64, nextSegment uint64)
+
+// DefaultRolloverCallback provides a callback which does nothing.
+var DefaultRolloverCallback RolloverCallback = func(previousSegment uint64, nextSegment uint64) {}
 
 // WriterOption describes the function signature which all writer options need to implement.
 type WriterOption func(w *Writer)
@@ -97,6 +106,14 @@ func WithSyncPolicyGrouped(syncAfter time.Duration) WriterOption {
 	}
 }
 
+// WithRolloverCallback sets the given callback for being triggered when the current segment is rolled.
+// Can be used with Reader.ToWriter.
+func WithRolloverCallback(rolloverCallback RolloverCallback) WriterOption {
+	return func(w *Writer) {
+		w.rolloverCallback = rolloverCallback
+	}
+}
+
 // FilePath returns the file path of the file this writer is writing to.
 func (w *Writer) FilePath() string {
 	return w.segmentWriter.FilePath()
@@ -146,6 +163,7 @@ func (w *Writer) rolloverIfNeeded() error {
 
 // rollover closes the current writer and creates a new segment to write to.
 func (w *Writer) rollover() error {
+	previousSegment := w.segmentWriter.Header().FirstSequenceNumber
 	if err := w.segmentWriter.Close(); err != nil {
 		return err
 	}
@@ -161,5 +179,7 @@ func (w *Writer) rollover() error {
 	}
 
 	w.segmentWriter = nextSegmentWriter
+	nextSegment := w.segmentWriter.Header().FirstSequenceNumber
+	w.rolloverCallback(previousSegment, nextSegment)
 	return nil
 }
