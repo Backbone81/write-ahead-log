@@ -1,6 +1,7 @@
 package wal
 
 import (
+	"errors"
 	"fmt"
 	"path"
 	"sync"
@@ -18,16 +19,16 @@ import (
 // You can only create a writer with the Reader.ToWriter function. This makes sure that you have read all entries before
 // writing to the write-ahead log.
 type Writer struct {
-	sync.Mutex
+	mutex sync.Mutex
 
 	segmentWriter *SegmentWriter
+	syncPolicy    SyncPolicy
 
 	preAllocationSize   int64
 	maxSegmentSize      int64
 	firstSequenceNumber uint64
 	entryLengthEncoding EntryLengthEncoding
 	entryChecksumType   EntryChecksumType
-	syncPolicy          SyncPolicy
 	rolloverCallback    RolloverCallback
 }
 
@@ -94,7 +95,7 @@ func WithSyncPolicyImmediate() WriterOption {
 // Can be used with Reader.ToWriter.
 func WithSyncPolicyPeriodic(syncAfterEntryCount int, syncEvery time.Duration) WriterOption {
 	return func(w *Writer) {
-		w.syncPolicy = NewSyncPolicyPeriodic(syncAfterEntryCount, syncEvery, &w.Mutex)
+		w.syncPolicy = NewSyncPolicyPeriodic(syncAfterEntryCount, syncEvery)
 	}
 }
 
@@ -102,7 +103,7 @@ func WithSyncPolicyPeriodic(syncAfterEntryCount int, syncEvery time.Duration) Wr
 // Can be used with Reader.ToWriter.
 func WithSyncPolicyGrouped(syncAfter time.Duration) WriterOption {
 	return func(w *Writer) {
-		w.syncPolicy = NewSyncPolicyGrouped(syncAfter, &w.Mutex)
+		w.syncPolicy = NewSyncPolicyGrouped(syncAfter)
 	}
 }
 
@@ -116,39 +117,76 @@ func WithRolloverCallback(rolloverCallback RolloverCallback) WriterOption {
 
 // FilePath returns the file path of the file this writer is writing to.
 func (w *Writer) FilePath() string {
+	w.mutex.Lock()
+	defer w.mutex.Unlock()
+
 	return w.segmentWriter.FilePath()
 }
 
 // Header returns the segment file header.
 func (w *Writer) Header() Header {
+	w.mutex.Lock()
+	defer w.mutex.Unlock()
+
 	return w.segmentWriter.Header()
 }
 
 // Offset returns the offset in bytes from the start of the file.
 func (w *Writer) Offset() int64 {
+	w.mutex.Lock()
+	defer w.mutex.Unlock()
+
 	return w.segmentWriter.Offset()
 }
 
 // NextSequenceNumber returns the sequence number the next entry will receive.
 func (w *Writer) NextSequenceNumber() uint64 {
+	w.mutex.Lock()
+	defer w.mutex.Unlock()
+
 	return w.segmentWriter.NextSequenceNumber()
 }
 
 // AppendEntry appends the given data as a new entry to the write-ahead log. It will roll over to the next segment
 // file before appending if the current file size exceeds the desired maximum segment size.
-func (w *Writer) AppendEntry(data []byte) error {
+func (w *Writer) AppendEntry(data []byte) (uint64, error) {
+	sequenceNumber, err := w.appendEntry(data)
+	if err != nil {
+		return 0, err
+	}
+
+	// Note that the call to the sync policy must not happen under the writer lock. The sync policy can block to
+	// group several AppendEntry calls. If this call would happen under the writer lock, we would not be able to have
+	// any concurrency at all.
+	if err := w.syncPolicy.EntryAppended(sequenceNumber); err != nil {
+		return 0, err
+	}
+	return sequenceNumber, nil
+}
+
+func (w *Writer) appendEntry(data []byte) (uint64, error) {
+	w.mutex.Lock()
+	defer w.mutex.Unlock()
+
 	if err := w.rolloverIfNeeded(); err != nil {
-		return err
+		return 0, err
 	}
-	if _, err := w.segmentWriter.AppendEntry(data); err != nil {
-		return fmt.Errorf("writing entry to segment file: %w", err)
+	sequenceNumber, err := w.segmentWriter.AppendEntry(data)
+	if err != nil {
+		return 0, fmt.Errorf("writing entry to segment file: %w", err)
 	}
-	return nil
+	return sequenceNumber, nil
 }
 
 // Close closes the underlying writer.
 func (w *Writer) Close() error {
-	return w.segmentWriter.Close()
+	w.mutex.Lock()
+	defer w.mutex.Unlock()
+
+	syncErr := w.syncPolicy.Shutdown()
+	closeErr := w.segmentWriter.Close()
+
+	return errors.Join(syncErr, closeErr)
 }
 
 // rolloverIfNeeded will check if the current offset exceeds the desired maximum segment size and do a rollover then.
@@ -164,6 +202,10 @@ func (w *Writer) rolloverIfNeeded() error {
 // rollover closes the current writer and creates a new segment to write to.
 func (w *Writer) rollover() error {
 	previousSegment := w.segmentWriter.Header().FirstSequenceNumber
+
+	if err := w.syncPolicy.Shutdown(); err != nil {
+		return err
+	}
 	if err := w.segmentWriter.Close(); err != nil {
 		return err
 	}
@@ -172,13 +214,16 @@ func (w *Writer) rollover() error {
 		PreAllocationSize:   w.preAllocationSize,
 		EntryLengthEncoding: w.entryLengthEncoding,
 		EntryChecksumType:   w.entryChecksumType,
-		SyncPolicy:          w.syncPolicy,
 	})
 	if err != nil {
 		return err
 	}
-
 	w.segmentWriter = nextSegmentWriter
+
+	if err := w.syncPolicy.Startup(w.segmentWriter); err != nil {
+		return err
+	}
+
 	nextSegment := w.segmentWriter.Header().FirstSequenceNumber
 	w.rolloverCallback(previousSegment, nextSegment)
 	return nil

@@ -27,7 +27,6 @@ func Init(directory string, options ...WriterOption) error {
 		PreAllocationSize:   newWriter.preAllocationSize,
 		EntryLengthEncoding: newWriter.entryLengthEncoding,
 		EntryChecksumType:   newWriter.entryChecksumType,
-		SyncPolicy:          newWriter.syncPolicy,
 	})
 	if err != nil {
 		return err

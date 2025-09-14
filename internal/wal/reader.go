@@ -141,18 +141,22 @@ func (r *Reader) ToWriter(options ...WriterOption) (*Writer, error) {
 		entryLengthEncoding: r.segmentReader.Header().EntryLengthEncoding,
 		entryChecksumType:   r.segmentReader.Header().EntryChecksumType,
 		rolloverCallback:    DefaultRolloverCallback,
+		syncPolicy:          NewSyncPolicyGrouped(10 * time.Millisecond),
 	}
-	newWriter.syncPolicy = NewSyncPolicyGrouped(10*time.Millisecond, &newWriter.Mutex)
 	for _, option := range options {
 		option(&newWriter)
 	}
 
-	newSegmentWriter, err := r.segmentReader.ToWriter(newWriter.syncPolicy)
+	newSegmentWriter, err := r.segmentReader.ToWriter()
 	if err != nil {
 		return nil, err
 	}
 
 	newWriter.segmentWriter = newSegmentWriter
+
+	if err := newWriter.syncPolicy.Startup(newWriter.segmentWriter); err != nil {
+		return nil, err
+	}
 	return &newWriter, nil
 }
 

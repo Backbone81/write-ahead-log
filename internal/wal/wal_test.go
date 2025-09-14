@@ -3,6 +3,7 @@ package wal_test
 import (
 	"fmt"
 	"os"
+	"path"
 	"sync"
 	"testing"
 	"time"
@@ -48,15 +49,13 @@ var _ = Describe("WAL", func() {
 				[]byte("bar"),
 				[]byte("baz"),
 			}
-			writer.Lock()
 			Expect(writer.Header().FirstSequenceNumber).To(Equal(uint64(0)))
 			Expect(writer.Header().EntryLengthEncoding).To(Equal(wal.DefaultEntryLengthEncoding))
 			Expect(writer.Header().EntryChecksumType).To(Equal(wal.DefaultEntryChecksumType))
 			for _, entry := range entries {
-				Expect(writer.AppendEntry(entry)).To(Succeed())
+				Expect(writer.AppendEntry(entry)).Error().ToNot(HaveOccurred())
 			}
 			Expect(writer.Close()).To(Succeed())
-			writer.Unlock()
 
 			By("re-open WAL and read the written entries")
 			reader, err = wal.NewReader(dir, 0)
@@ -119,12 +118,10 @@ var _ = Describe("WAL", func() {
 							[]byte("bar"),
 							[]byte("baz"),
 						}
-						writer.Lock()
 						for _, entry := range entries {
-							Expect(writer.AppendEntry(entry)).To(Succeed())
+							Expect(writer.AppendEntry(entry)).Error().ToNot(HaveOccurred())
 						}
 						Expect(writer.Close()).To(Succeed())
-						writer.Unlock()
 
 						By("re-open WAL and read the written entries")
 						reader, err = wal.NewReader(dir, 0)
@@ -158,9 +155,7 @@ var _ = Describe("WAL", func() {
 							_ = reader.Close()
 						}).To(Panic())
 
-						writer.Lock()
 						Expect(writer.Close()).To(Succeed())
-						writer.Unlock()
 					})
 
 					It("should roll over the segment", func() {
@@ -189,18 +184,16 @@ var _ = Describe("WAL", func() {
 						)
 						Expect(err).ToNot(HaveOccurred())
 
-						writer.Lock()
 						initialSegment := writer.FilePath()
-						Expect(writer.AppendEntry(make([]byte, 1024))).To(Succeed())
+						Expect(writer.AppendEntry(make([]byte, 1024))).Error().ToNot(HaveOccurred())
 						Expect(writer.FilePath()).To(Equal(initialSegment))
 
 						// The rollover happens on the first write after we are over the size
-						Expect(writer.AppendEntry([]byte("bar"))).To(Succeed())
+						Expect(writer.AppendEntry([]byte("bar"))).Error().ToNot(HaveOccurred())
 						Expect(writer.FilePath()).ToNot(Equal(initialSegment))
 						Expect(rolloverCount).To(Equal(1))
 
 						Expect(writer.Close()).To(Succeed())
-						writer.Unlock()
 					})
 				})
 			}
@@ -208,16 +201,17 @@ var _ = Describe("WAL", func() {
 	}
 })
 
-func BenchmarkWriter_AppendEntry(b *testing.B) {
+//nolint:gocognit,cyclop
+func BenchmarkWriter_AppendEntry_Serial(b *testing.B) {
 	for _, entryLengthEncoding := range []wal.EntryLengthEncoding{wal.DefaultEntryLengthEncoding} {
 		for _, entryChecksumType := range []wal.EntryChecksumType{wal.DefaultEntryChecksumType} {
 			for syncPolicyName, syncPolicy := range map[string]wal.WriterOption{
-				//"none":      wal.WithSyncPolicyNone(),
-				//"immediate": wal.WithSyncPolicyImmediate(),
-				//"periodic":  wal.WithSyncPolicyPeriodic(10, time.Millisecond),
-				"grouped": wal.WithSyncPolicyGrouped(time.Millisecond),
+				"none":      wal.WithSyncPolicyNone(),
+				"immediate": wal.WithSyncPolicyImmediate(),
+				"periodic":  wal.WithSyncPolicyPeriodic(100, 10*time.Millisecond),
+				"grouped":   wal.WithSyncPolicyGrouped(10 * time.Millisecond),
 			} {
-				for _, dataSize := range []int{4} {
+				for _, dataSize := range []int{0, 1, 2, 4, 8, 16} {
 					dir := b.TempDir()
 					data := make([]byte, dataSize*1024)
 					if err := wal.Init(
@@ -233,32 +227,86 @@ func BenchmarkWriter_AppendEntry(b *testing.B) {
 					}
 					reader.Next()
 					writer, err := reader.ToWriter(syncPolicy, wal.WithRolloverCallback(func(previousSegment uint64, nextSegment uint64) {
-						//if err := os.Remove(path.Join(dir, wal.SegmentFileName(previousSegment))); err != nil {
-						//	b.Fatal(err)
-						//}
+						if err := os.Remove(path.Join(dir, wal.SegmentFileName(previousSegment))); err != nil {
+							b.Fatal(err)
+						}
+					}))
+					if err != nil {
+						b.Fatal(err)
+					}
+					b.Run(fmt.Sprintf("%s %s %s %d KB", entryLengthEncoding, entryChecksumType, syncPolicyName, dataSize), func(b *testing.B) {
+						for range b.N {
+							_, err = writer.AppendEntry(data)
+							if err != nil {
+								panic(err)
+							}
+						}
+						timeNeeded := b.Elapsed().Seconds()
+						dataAppended := b.N * dataSize * 1024
+						b.ReportMetric(float64(dataAppended/1024/1024)/timeNeeded, "MB/s")
+					})
+					if err := writer.Close(); err != nil {
+						b.Fatal(err)
+					}
+				}
+			}
+		}
+	}
+}
+
+//nolint:gocognit,cyclop
+func BenchmarkWriter_AppendEntry_Concurrently(b *testing.B) {
+	for _, entryLengthEncoding := range []wal.EntryLengthEncoding{wal.DefaultEntryLengthEncoding} {
+		for _, entryChecksumType := range []wal.EntryChecksumType{wal.DefaultEntryChecksumType} {
+			for syncPolicyName, syncPolicy := range map[string]wal.WriterOption{
+				"none":      wal.WithSyncPolicyNone(),
+				"immediate": wal.WithSyncPolicyImmediate(),
+				"periodic":  wal.WithSyncPolicyPeriodic(100, 10*time.Millisecond),
+				"grouped":   wal.WithSyncPolicyGrouped(10 * time.Millisecond),
+			} {
+				for _, dataSize := range []int{0, 1, 2, 4, 8, 16} {
+					dir := b.TempDir()
+					data := make([]byte, dataSize*1024)
+					if err := wal.Init(
+						dir,
+						wal.WithEntryLengthEncoding(entryLengthEncoding),
+						wal.WithEntryChecksumType(entryChecksumType),
+					); err != nil {
+						b.Fatal(err)
+					}
+					reader, err := wal.NewReader(dir, 0)
+					if err != nil {
+						b.Fatal(err)
+					}
+					reader.Next()
+					writer, err := reader.ToWriter(syncPolicy, wal.WithRolloverCallback(func(previousSegment uint64, nextSegment uint64) {
+						if err := os.Remove(path.Join(dir, wal.SegmentFileName(previousSegment))); err != nil {
+							b.Fatal(err)
+						}
 					}))
 					if err != nil {
 						b.Fatal(err)
 					}
 					b.Run(fmt.Sprintf("%s %s %s %d KB", entryLengthEncoding, entryChecksumType, syncPolicyName, dataSize), func(b *testing.B) {
 						var wg sync.WaitGroup
-						count := 5000
-						wg.Add(count)
-						for range count {
+						wg.Add(b.N)
+						for range b.N {
 							go func() {
-								writer.Lock()
-								_ = writer.AppendEntry(data)
-								writer.Unlock()
-								wg.Done()
+								defer wg.Done()
+								_, err = writer.AppendEntry(data)
+								if err != nil {
+									panic(err)
+								}
 							}()
 						}
 						wg.Wait()
+						timeNeeded := b.Elapsed().Seconds()
+						dataAppended := b.N * dataSize * 1024
+						b.ReportMetric(float64(dataAppended/1024/1024)/timeNeeded, "MB/s")
 					})
-					writer.Lock()
 					if err := writer.Close(); err != nil {
 						b.Fatal(err)
 					}
-					writer.Unlock()
 				}
 			}
 		}

@@ -264,7 +264,7 @@ func (r *SegmentReader) Err() error {
 // ToWriter returns a SegmentWriter to append to the open segment file. You must have read all entries of the segment
 // before you call this method. Otherwise, it will fail. After a call to ToWriter(), you cannot use the SegmentReader
 // anymore.
-func (r *SegmentReader) ToWriter(syncPolicy SyncPolicy) (*SegmentWriter, error) {
+func (r *SegmentReader) ToWriter() (*SegmentWriter, error) {
 	if !errors.Is(r.err, ErrEntryNone) {
 		return nil, errors.New("segment needs to be read until the last entry is reached")
 	}
@@ -278,7 +278,6 @@ func (r *SegmentReader) ToWriter(syncPolicy SyncPolicy) (*SegmentWriter, error) 
 		Header:             r.header,
 		Offset:             r.offset,
 		NextSequenceNumber: r.nextSequenceNumber,
-		SyncPolicy:         syncPolicy,
 	})
 	if err != nil {
 		return nil, err

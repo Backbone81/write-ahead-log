@@ -2,7 +2,6 @@ package wal
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -48,9 +47,6 @@ type SegmentWriter struct {
 
 	// This buffer is used to combine multiple individual file write commands into a single one to improve performance.
 	writeBuffer *bytes.Buffer
-
-	// The policy describing how data is flushed to disk.
-	syncPolicy SyncPolicy
 }
 
 // CreateSegmentConfig is the configuration required for a call to CreateSegment.
@@ -64,9 +60,6 @@ type CreateSegmentConfig struct {
 
 	// EntryChecksumType is the type of entry checksum to use.
 	EntryChecksumType EntryChecksumType
-
-	// SyncPolicy is the sync policy to apply to entry writes.
-	SyncPolicy SyncPolicy
 }
 
 // DefaultPreAllocationSize is a segment size which should work well for most use cases.
@@ -129,7 +122,6 @@ func CreateSegment(directory string, firstSequenceNumber uint64, createSegmentCo
 		Header:             header,
 		Offset:             offset,
 		NextSequenceNumber: firstSequenceNumber,
-		SyncPolicy:         createSegmentConfig.SyncPolicy,
 	})
 }
 
@@ -143,9 +135,6 @@ type NewSegmentWriterConfig struct {
 
 	// NextSequenceNumber is the sequence number the next entry will receive.
 	NextSequenceNumber uint64
-
-	// SyncPolicy describes the way written entries any synced to stable storage.
-	SyncPolicy SyncPolicy
 }
 
 // NewSegmentWriter creates a SegmentWriter from a file which is already open.
@@ -160,11 +149,6 @@ func NewSegmentWriter(file SegmentWriterFile, newSegmentWriterConfig NewSegmentW
 		return nil, err
 	}
 
-	syncPolicy := newSegmentWriterConfig.SyncPolicy.Clone()
-	if err := syncPolicy.Startup(file); err != nil {
-		return nil, err
-	}
-
 	return &SegmentWriter{
 		file:                file,
 		header:              newSegmentWriterConfig.Header,
@@ -173,7 +157,6 @@ func NewSegmentWriter(file SegmentWriterFile, newSegmentWriterConfig NewSegmentW
 		entryLengthWriter:   entryLengthWriter,
 		entryChecksumWriter: entryChecksumWriter,
 		writeBuffer:         bytes.NewBuffer(make([]byte, 0, 4*1024)),
-		syncPolicy:          syncPolicy,
 	}, nil
 }
 
@@ -220,15 +203,21 @@ func (w *SegmentWriter) AppendEntry(data []byte) (uint64, error) {
 	w.nextSequenceNumber++
 	w.offset += int64(w.writeBuffer.Len())
 
-	if err := w.syncPolicy.EntryAppended(sequenceNumber); err != nil {
-		return 0, fmt.Errorf("flushing WAL entry to segment file: %w", err)
-	}
 	return sequenceNumber, nil
+}
+
+// Sync flushes the content of the segment to stable storage.
+func (w *SegmentWriter) Sync() error {
+	if err := w.file.Sync(); err != nil {
+		return err
+	}
+	return nil
 }
 
 // Close flushes all pending changes to disk and closes the file.
 func (w *SegmentWriter) Close() error {
-	syncErr := w.syncPolicy.Shutdown()
-	closeErr := w.file.Close()
-	return errors.Join(syncErr, closeErr)
+	if err := w.file.Close(); err != nil {
+		return err
+	}
+	return nil
 }

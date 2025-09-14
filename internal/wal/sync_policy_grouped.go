@@ -3,7 +3,6 @@ package wal
 import (
 	"fmt"
 	"log"
-	"math"
 	"sync"
 	"time"
 )
@@ -13,10 +12,10 @@ import (
 // Access to this sync policy needs to be synchronized externally. As it starts a go routine, the external mutex
 // is saved in the struct to use in the go routine for synchronization.
 type SyncPolicyGrouped struct {
-	syncAfter time.Duration
-	mutex     *sync.Mutex
+	mutex sync.Mutex
 
-	file              SegmentWriterFile
+	syncAfter         time.Duration
+	segmentWriter     *SegmentWriter
 	syncTimer         *time.Timer
 	shutdown          chan struct{}
 	shutdownWaitGroup sync.WaitGroup
@@ -30,24 +29,36 @@ type SyncPolicyGrouped struct {
 // SyncPolicyGrouped implements SyncPolicy.
 var _ SyncPolicy = (*SyncPolicyGrouped)(nil)
 
-func NewSyncPolicyGrouped(syncAfter time.Duration, mutex *sync.Mutex) *SyncPolicyGrouped {
+func NewSyncPolicyGrouped(syncAfter time.Duration) *SyncPolicyGrouped {
 	return &SyncPolicyGrouped{
 		syncAfter: syncAfter,
-		mutex:     mutex,
 	}
 }
 
-func (s *SyncPolicyGrouped) Startup(file SegmentWriterFile) error {
-	s.file = file
-	s.syncTimer = time.NewTimer(math.MaxInt64)
+func (s *SyncPolicyGrouped) Startup(segmentWriter *SegmentWriter) error {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+
+	s.segmentWriter = segmentWriter
+
+	// Note that we start the sync timer during startup, even though we do not yet have an append pending. This is
+	// necessary to avoid a deadlock during rollover, which is caused by missed appends while the sync policy was
+	// shutdown but not yet up. To prevent that, we start the timer immediately, and it will be a no-op when nothing
+	// was appended during rollover.
+	s.syncTimer = time.NewTimer(s.syncAfter)
+	s.syncTimerActive = true
+
 	s.shutdown = make(chan struct{})
-	s.backgroundSync.L = s.mutex
+	s.backgroundSync.L = &s.mutex
 	s.shutdownWaitGroup.Add(1)
 	go s.backgroundTask()
 	return nil
 }
 
 func (s *SyncPolicyGrouped) EntryAppended(sequenceNumber uint64) error {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+
 	if !s.syncTimerActive {
 		s.syncTimer.Reset(s.syncAfter)
 		s.syncTimerActive = true
@@ -61,22 +72,21 @@ func (s *SyncPolicyGrouped) EntryAppended(sequenceNumber uint64) error {
 }
 
 func (s *SyncPolicyGrouped) Shutdown() error {
-	// Shutdown and wait for the periodic sync to exit.
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+
 	s.syncTimer.Stop()
 	close(s.shutdown)
+
+	// We need to unlock the mutex while waiting for the shutdown, otherwise we run the risk of a deadlock.
+	s.mutex.Unlock()
 	s.shutdownWaitGroup.Wait()
+	s.mutex.Lock()
 
 	if err := s.syncNow(); err != nil {
 		return err
 	}
 	return nil
-}
-
-func (s *SyncPolicyGrouped) Clone() SyncPolicy {
-	return &SyncPolicyGrouped{
-		syncAfter: s.syncAfter,
-		mutex:     s.mutex,
-	}
 }
 
 func (s *SyncPolicyGrouped) String() string {
@@ -112,7 +122,7 @@ func (s *SyncPolicyGrouped) syncNow() error {
 		return nil
 	}
 
-	if err := s.file.Sync(); err != nil {
+	if err := s.segmentWriter.Sync(); err != nil {
 		return fmt.Errorf("flushing WAL segment file: %w", err)
 	}
 	s.syncedSequenceNumber = s.pendingSequenceNumber
