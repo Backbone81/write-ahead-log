@@ -4,8 +4,10 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"log"
 	"os"
 	"path"
+	"time"
 
 	"write-ahead-log/internal/utils"
 )
@@ -182,6 +184,9 @@ func (w *SegmentWriter) NextSequenceNumber() uint64 {
 
 // AppendEntry adds the given entry to the segment.
 func (w *SegmentWriter) AppendEntry(data []byte) (uint64, error) {
+	AppendEntryTotal.Inc()
+	AppendEntryBytes.Add(float64(len(data)))
+
 	w.writeBuffer.Reset()
 	if err := w.entryLengthWriter(w.writeBuffer, w.scratchBuffer[:], uint64(len(data))); err != nil {
 		return 0, err
@@ -208,9 +213,17 @@ func (w *SegmentWriter) AppendEntry(data []byte) (uint64, error) {
 
 // Sync flushes the content of the segment to stable storage.
 func (w *SegmentWriter) Sync() error {
+	SyncTotal.Inc()
+
+	start := time.Now()
 	if err := w.file.Sync(); err != nil {
 		return err
 	}
+	duration := time.Since(start).Seconds()
+	if duration > 1.0 {
+		log.Printf("WARNING: Sync to disk needed %f seconds which is too slow.\n", duration)
+	}
+	SyncDuration.Observe(duration)
 	return nil
 }
 

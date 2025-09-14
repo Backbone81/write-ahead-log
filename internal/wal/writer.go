@@ -3,6 +3,7 @@ package wal
 import (
 	"errors"
 	"fmt"
+	"log"
 	"path"
 	"sync"
 	"time"
@@ -201,6 +202,9 @@ func (w *Writer) rolloverIfNeeded() error {
 
 // rollover closes the current writer and creates a new segment to write to.
 func (w *Writer) rollover() error {
+	RolloverTotal.Inc()
+	start := time.Now()
+
 	previousSegment := w.segmentWriter.Header().FirstSequenceNumber
 
 	if err := w.syncPolicy.Shutdown(); err != nil {
@@ -226,5 +230,11 @@ func (w *Writer) rollover() error {
 
 	nextSegment := w.segmentWriter.Header().FirstSequenceNumber
 	w.rolloverCallback(previousSegment, nextSegment)
+
+	duration := time.Since(start).Seconds()
+	if duration > 1.0 {
+		log.Printf("WARNING: Segment rollover needed %f seconds which is too slow.\n", duration)
+	}
+	RolloverDuration.Observe(duration)
 	return nil
 }

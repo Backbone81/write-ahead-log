@@ -22,11 +22,11 @@ It supports the following features:
   - Sync policy "grouped" for flushing all entries synchronously which are written within a defined time window after
     the first pending entry. This amortizes the cost of flushing data to stable storage over multiple concurrent writes.
     It guarantees that the entry was flushed after the call to the writer returns.
+- Custom metrics for insights into the WAL.
 
 ## TODOs
 
 - Implement segment creation which works on windows and linux
-- Collect metrics about what is happening with the wal
 - Introduce read buffer for better read performance from disk
 - Provide a CLI for inspecting the WAL and to do maintenance
 

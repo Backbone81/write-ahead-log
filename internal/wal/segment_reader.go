@@ -193,6 +193,9 @@ func (r *SegmentReader) Next() bool {
 		}
 		return false
 	}
+
+	ReadEntryTotal.Inc()
+	ReadEntryBytes.Add(float64(len(r.value.Data)))
 	return true
 }
 
