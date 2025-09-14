@@ -65,7 +65,7 @@ func SegmentFromSequenceNumber(directory string, sequenceNumber uint64) (uint64,
 	return segments[index], nil
 }
 
-func segmentFileName(sequenceNumber uint64) string {
+func SegmentFileName(sequenceNumber uint64) string {
 	return fmt.Sprintf("%020d.wal", sequenceNumber)
 }
 

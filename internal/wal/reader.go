@@ -100,7 +100,7 @@ func (r *Reader) Next() bool {
 		return false
 	}
 
-	nextSegmentReader, err := OpenSegment(segmentFileName(r.segmentReader.NextSequenceNumber()), r.segmentReader.NextSequenceNumber())
+	nextSegmentReader, err := OpenSegment(SegmentFileName(r.segmentReader.NextSequenceNumber()), r.segmentReader.NextSequenceNumber())
 	if err != nil {
 		// We keep the old error in r.err because this wil still signal that no entry could be read.
 		return false

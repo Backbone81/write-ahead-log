@@ -81,7 +81,7 @@ const DefaultPreAllocationSize = 64 * 1024 * 1024
 // createSegmentConfig provides more configuration for the new segment.
 func CreateSegment(directory string, firstSequenceNumber uint64, createSegmentConfig CreateSegmentConfig) (*SegmentWriter, error) {
 	// Remove any temporary segment file which might be there from an earlier failure.
-	newSegmentFileName := segmentFileName(firstSequenceNumber) + ".new"
+	newSegmentFileName := SegmentFileName(firstSequenceNumber) + ".new"
 	newSegmentFilePath := path.Join(directory, newSegmentFileName)
 	if err := os.Remove(newSegmentFilePath); err != nil && !os.IsNotExist(err) {
 		return nil, fmt.Errorf("removing the WAL segment file %q: %w", newSegmentFilePath, err)
@@ -115,7 +115,7 @@ func CreateSegment(directory string, firstSequenceNumber uint64, createSegmentCo
 	}
 
 	// Rename the temporary segment file to the final one.
-	segmentFilePath := path.Join(directory, segmentFileName(firstSequenceNumber))
+	segmentFilePath := path.Join(directory, SegmentFileName(firstSequenceNumber))
 	if err := os.Rename(newSegmentFilePath, segmentFilePath); err != nil {
 		return nil, fmt.Errorf("renaming the WAL segment file from %q to %q: %w", newSegmentFilePath, segmentFilePath, err)
 	}

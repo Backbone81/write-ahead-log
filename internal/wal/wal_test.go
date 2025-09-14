@@ -3,6 +3,8 @@ package wal_test
 import (
 	"fmt"
 	"os"
+	"sync"
+	"testing"
 	"time"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -177,7 +179,8 @@ var _ = Describe("WAL", func() {
 
 						By("create writer")
 						var rolloverCount int
-						writer, err := reader.ToWriter(syncPolicy,
+						writer, err := reader.ToWriter(
+							syncPolicy,
 							wal.WithMaxSegmentSize(512),
 							wal.WithPreAllocationSize(512),
 							wal.WithRolloverCallback(func(previousSegment uint64, nextSegment uint64) {
@@ -204,3 +207,60 @@ var _ = Describe("WAL", func() {
 		}
 	}
 })
+
+func BenchmarkWriter_AppendEntry(b *testing.B) {
+	for _, entryLengthEncoding := range []wal.EntryLengthEncoding{wal.DefaultEntryLengthEncoding} {
+		for _, entryChecksumType := range []wal.EntryChecksumType{wal.DefaultEntryChecksumType} {
+			for syncPolicyName, syncPolicy := range map[string]wal.WriterOption{
+				//"none":      wal.WithSyncPolicyNone(),
+				//"immediate": wal.WithSyncPolicyImmediate(),
+				//"periodic":  wal.WithSyncPolicyPeriodic(10, time.Millisecond),
+				"grouped": wal.WithSyncPolicyGrouped(time.Millisecond),
+			} {
+				for _, dataSize := range []int{4} {
+					dir := b.TempDir()
+					data := make([]byte, dataSize*1024)
+					if err := wal.Init(
+						dir,
+						wal.WithEntryLengthEncoding(entryLengthEncoding),
+						wal.WithEntryChecksumType(entryChecksumType),
+					); err != nil {
+						b.Fatal(err)
+					}
+					reader, err := wal.NewReader(dir, 0)
+					if err != nil {
+						b.Fatal(err)
+					}
+					reader.Next()
+					writer, err := reader.ToWriter(syncPolicy, wal.WithRolloverCallback(func(previousSegment uint64, nextSegment uint64) {
+						//if err := os.Remove(path.Join(dir, wal.SegmentFileName(previousSegment))); err != nil {
+						//	b.Fatal(err)
+						//}
+					}))
+					if err != nil {
+						b.Fatal(err)
+					}
+					b.Run(fmt.Sprintf("%s %s %s %d KB", entryLengthEncoding, entryChecksumType, syncPolicyName, dataSize), func(b *testing.B) {
+						var wg sync.WaitGroup
+						count := 5000
+						wg.Add(count)
+						for range count {
+							go func() {
+								writer.Lock()
+								_ = writer.AppendEntry(data)
+								writer.Unlock()
+								wg.Done()
+							}()
+						}
+						wg.Wait()
+					})
+					writer.Lock()
+					if err := writer.Close(); err != nil {
+						b.Fatal(err)
+					}
+					writer.Unlock()
+				}
+			}
+		}
+	}
+}

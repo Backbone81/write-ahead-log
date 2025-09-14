@@ -72,7 +72,7 @@ type SegmentReaderValue struct {
 // To avoid resources leaking, the returned SegmentReader needs to be closed by calling Shutdown().
 // Returns an error if the file cannot be opened, read from or the header is malformed.
 func OpenSegment(directory string, firstSequenceNumber uint64) (*SegmentReader, error) {
-	segmentFilePath := path.Join(directory, segmentFileName(firstSequenceNumber))
+	segmentFilePath := path.Join(directory, SegmentFileName(firstSequenceNumber))
 	segmentReader, err := openSegment(segmentFilePath, firstSequenceNumber)
 	if err != nil {
 		return nil, fmt.Errorf("the WAL segment file %q: %w", segmentFilePath, err)
