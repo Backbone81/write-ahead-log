@@ -7,6 +7,9 @@ import (
 	"path"
 	"sync"
 	"time"
+
+	"write-ahead-log/internal/encoding"
+	"write-ahead-log/internal/segment"
 )
 
 // Writer provides the main functionality for writing to the write-ahead log. It abstracts away the fact that the WAL
@@ -22,14 +25,14 @@ import (
 type Writer struct {
 	mutex sync.Mutex
 
-	segmentWriter *SegmentWriter
+	segmentWriter *segment.SegmentWriter
 	syncPolicy    SyncPolicy
 
 	preAllocationSize   int64
 	maxSegmentSize      int64
 	firstSequenceNumber uint64
-	entryLengthEncoding EntryLengthEncoding
-	entryChecksumType   EntryChecksumType
+	entryLengthEncoding encoding.EntryLengthEncoding
+	entryChecksumType   encoding.EntryChecksumType
 	rolloverCallback    RolloverCallback
 }
 
@@ -62,7 +65,7 @@ func WithMaxSegmentSize(maxSegmentSize int64) WriterOption {
 
 // WithEntryLengthEncoding overwrites the default entry length encoding.
 // Can be used with Init and Reader.ToWriter.
-func WithEntryLengthEncoding(entryLengthEncoding EntryLengthEncoding) WriterOption {
+func WithEntryLengthEncoding(entryLengthEncoding encoding.EntryLengthEncoding) WriterOption {
 	return func(w *Writer) {
 		w.entryLengthEncoding = entryLengthEncoding
 	}
@@ -70,7 +73,7 @@ func WithEntryLengthEncoding(entryLengthEncoding EntryLengthEncoding) WriterOpti
 
 // WithEntryChecksumType overwrites the default entry checksum type.
 // Can be used with Init and Reader.ToWriter.
-func WithEntryChecksumType(entryChecksumType EntryChecksumType) WriterOption {
+func WithEntryChecksumType(entryChecksumType encoding.EntryChecksumType) WriterOption {
 	return func(w *Writer) {
 		w.entryChecksumType = entryChecksumType
 	}
@@ -125,7 +128,7 @@ func (w *Writer) FilePath() string {
 }
 
 // Header returns the segment file header.
-func (w *Writer) Header() Header {
+func (w *Writer) Header() encoding.Header {
 	w.mutex.Lock()
 	defer w.mutex.Unlock()
 
@@ -214,7 +217,7 @@ func (w *Writer) rollover() error {
 		return err
 	}
 
-	nextSegmentWriter, err := CreateSegment(path.Dir(w.segmentWriter.FilePath()), w.segmentWriter.NextSequenceNumber(), CreateSegmentConfig{
+	nextSegmentWriter, err := segment.CreateSegment(path.Dir(w.segmentWriter.FilePath()), w.segmentWriter.NextSequenceNumber(), segment.CreateSegmentConfig{
 		PreAllocationSize:   w.preAllocationSize,
 		EntryLengthEncoding: w.entryLengthEncoding,
 		EntryChecksumType:   w.entryChecksumType,

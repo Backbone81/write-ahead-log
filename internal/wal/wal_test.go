@@ -11,6 +11,8 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
+	"write-ahead-log/internal/encoding"
+	"write-ahead-log/internal/segment"
 	"write-ahead-log/internal/wal"
 )
 
@@ -36,10 +38,10 @@ var _ = Describe("WAL", func() {
 			reader, err := wal.NewReader(dir, 0)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(reader.Header().FirstSequenceNumber).To(Equal(uint64(0)))
-			Expect(reader.Header().EntryLengthEncoding).To(Equal(wal.DefaultEntryLengthEncoding))
-			Expect(reader.Header().EntryChecksumType).To(Equal(wal.DefaultEntryChecksumType))
+			Expect(reader.Header().EntryLengthEncoding).To(Equal(encoding.DefaultEntryLengthEncoding))
+			Expect(reader.Header().EntryChecksumType).To(Equal(encoding.DefaultEntryChecksumType))
 			Expect(reader.Next()).To(BeFalse())
-			Expect(reader.Err()).To(MatchError(wal.ErrEntryNone))
+			Expect(reader.Err()).To(MatchError(segment.ErrEntryNone))
 
 			By("write to WAL")
 			writer, err := reader.ToWriter()
@@ -50,8 +52,8 @@ var _ = Describe("WAL", func() {
 				[]byte("baz"),
 			}
 			Expect(writer.Header().FirstSequenceNumber).To(Equal(uint64(0)))
-			Expect(writer.Header().EntryLengthEncoding).To(Equal(wal.DefaultEntryLengthEncoding))
-			Expect(writer.Header().EntryChecksumType).To(Equal(wal.DefaultEntryChecksumType))
+			Expect(writer.Header().EntryLengthEncoding).To(Equal(encoding.DefaultEntryLengthEncoding))
+			Expect(writer.Header().EntryChecksumType).To(Equal(encoding.DefaultEntryChecksumType))
 			for _, entry := range entries {
 				Expect(writer.AppendEntry(entry)).Error().ToNot(HaveOccurred())
 			}
@@ -61,20 +63,20 @@ var _ = Describe("WAL", func() {
 			reader, err = wal.NewReader(dir, 0)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(reader.Header().FirstSequenceNumber).To(Equal(uint64(0)))
-			Expect(reader.Header().EntryLengthEncoding).To(Equal(wal.DefaultEntryLengthEncoding))
-			Expect(reader.Header().EntryChecksumType).To(Equal(wal.DefaultEntryChecksumType))
+			Expect(reader.Header().EntryLengthEncoding).To(Equal(encoding.DefaultEntryLengthEncoding))
+			Expect(reader.Header().EntryChecksumType).To(Equal(encoding.DefaultEntryChecksumType))
 			for i, entry := range entries {
 				Expect(reader.Next()).To(BeTrue())
 				Expect(reader.Value().Data).To(Equal(entry))
 				Expect(reader.Value().SequenceNumber).To(Equal(uint64(i)))
 			}
 			Expect(reader.Next()).To(BeFalse())
-			Expect(reader.Err()).To(MatchError(wal.ErrEntryNone))
+			Expect(reader.Err()).To(MatchError(segment.ErrEntryNone))
 		})
 	})
 
-	for _, entryLengthEncoding := range wal.EntryLengthEncodings {
-		for _, entryChecksumType := range wal.EntryChecksumTypes {
+	for _, entryLengthEncoding := range encoding.EntryLengthEncodings {
+		for _, entryChecksumType := range encoding.EntryChecksumTypes {
 			for syncPolicyName, syncPolicy := range map[string]wal.WriterOption{
 				"none":      wal.WithSyncPolicyNone(),
 				"immediate": wal.WithSyncPolicyImmediate(),
@@ -105,7 +107,7 @@ var _ = Describe("WAL", func() {
 						Expect(reader.Header().EntryLengthEncoding).To(Equal(entryLengthEncoding))
 						Expect(reader.Header().EntryChecksumType).To(Equal(entryChecksumType))
 						Expect(reader.Next()).To(BeFalse())
-						Expect(reader.Err()).To(MatchError(wal.ErrEntryNone))
+						Expect(reader.Err()).To(MatchError(segment.ErrEntryNone))
 
 						By("write to WAL")
 						writer, err := reader.ToWriter(syncPolicy)
@@ -135,7 +137,7 @@ var _ = Describe("WAL", func() {
 							Expect(reader.Value().SequenceNumber).To(Equal(uint64(i)))
 						}
 						Expect(reader.Next()).To(BeFalse())
-						Expect(reader.Err()).To(MatchError(wal.ErrEntryNone))
+						Expect(reader.Err()).To(MatchError(segment.ErrEntryNone))
 					})
 
 					It("should panic to close the reader when the writer was already created", func() {
@@ -203,8 +205,8 @@ var _ = Describe("WAL", func() {
 
 //nolint:gocognit,cyclop
 func BenchmarkWriter_AppendEntry_Serial(b *testing.B) {
-	for _, entryLengthEncoding := range []wal.EntryLengthEncoding{wal.DefaultEntryLengthEncoding} {
-		for _, entryChecksumType := range []wal.EntryChecksumType{wal.DefaultEntryChecksumType} {
+	for _, entryLengthEncoding := range []encoding.EntryLengthEncoding{encoding.DefaultEntryLengthEncoding} {
+		for _, entryChecksumType := range []encoding.EntryChecksumType{encoding.DefaultEntryChecksumType} {
 			for syncPolicyName, syncPolicy := range map[string]wal.WriterOption{
 				"none":      wal.WithSyncPolicyNone(),
 				"immediate": wal.WithSyncPolicyImmediate(),
@@ -227,7 +229,7 @@ func BenchmarkWriter_AppendEntry_Serial(b *testing.B) {
 					}
 					reader.Next()
 					writer, err := reader.ToWriter(syncPolicy, wal.WithRolloverCallback(func(previousSegment uint64, nextSegment uint64) {
-						if err := os.Remove(path.Join(dir, wal.SegmentFileName(previousSegment))); err != nil {
+						if err := os.Remove(path.Join(dir, segment.SegmentFileName(previousSegment))); err != nil {
 							b.Fatal(err)
 						}
 					}))
@@ -256,8 +258,8 @@ func BenchmarkWriter_AppendEntry_Serial(b *testing.B) {
 
 //nolint:gocognit,cyclop
 func BenchmarkWriter_AppendEntry_Concurrently(b *testing.B) {
-	for _, entryLengthEncoding := range []wal.EntryLengthEncoding{wal.DefaultEntryLengthEncoding} {
-		for _, entryChecksumType := range []wal.EntryChecksumType{wal.DefaultEntryChecksumType} {
+	for _, entryLengthEncoding := range []encoding.EntryLengthEncoding{encoding.DefaultEntryLengthEncoding} {
+		for _, entryChecksumType := range []encoding.EntryChecksumType{encoding.DefaultEntryChecksumType} {
 			for syncPolicyName, syncPolicy := range map[string]wal.WriterOption{
 				"none":      wal.WithSyncPolicyNone(),
 				"immediate": wal.WithSyncPolicyImmediate(),
@@ -280,7 +282,7 @@ func BenchmarkWriter_AppendEntry_Concurrently(b *testing.B) {
 					}
 					reader.Next()
 					writer, err := reader.ToWriter(syncPolicy, wal.WithRolloverCallback(func(previousSegment uint64, nextSegment uint64) {
-						if err := os.Remove(path.Join(dir, wal.SegmentFileName(previousSegment))); err != nil {
+						if err := os.Remove(path.Join(dir, segment.SegmentFileName(previousSegment))); err != nil {
 							b.Fatal(err)
 						}
 					}))

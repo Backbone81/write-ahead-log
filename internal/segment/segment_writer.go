@@ -1,4 +1,4 @@
-package wal
+package segment
 
 import (
 	"bytes"
@@ -9,6 +9,7 @@ import (
 	"path"
 	"time"
 
+	"write-ahead-log/internal/encoding"
 	"write-ahead-log/internal/utils"
 )
 
@@ -29,7 +30,7 @@ type SegmentWriter struct {
 	file SegmentWriterFile
 
 	// The header of the segment file.
-	header Header
+	header encoding.Header
 
 	// The current offset in bytes from the start of the file.
 	offset int64
@@ -38,14 +39,14 @@ type SegmentWriter struct {
 	nextSequenceNumber uint64
 
 	// The writer to encode the length of an entry.
-	entryLengthWriter EntryLengthWriter
+	entryLengthWriter encoding.EntryLengthWriter
 
 	// The writer to calculate and write the checksum.
-	entryChecksumWriter EntryChecksumWriter
+	entryChecksumWriter encoding.EntryChecksumWriter
 
 	// This is a temporary buffer for converting integers into slices of bytes. This helps us with reducing the amount
 	// of memory allocations.
-	scratchBuffer [max(MaxLengthBufferLen, MaxChecksumBufferLen)]byte
+	scratchBuffer [max(encoding.MaxLengthBufferLen, encoding.MaxChecksumBufferLen)]byte
 
 	// This buffer is used to combine multiple individual file write commands into a single one to improve performance.
 	writeBuffer *bytes.Buffer
@@ -58,10 +59,10 @@ type CreateSegmentConfig struct {
 	PreAllocationSize int64
 
 	// EntryLengthEncoding is the encoding of entry lengths.
-	EntryLengthEncoding EntryLengthEncoding
+	EntryLengthEncoding encoding.EntryLengthEncoding
 
 	// EntryChecksumType is the type of entry checksum to use.
-	EntryChecksumType EntryChecksumType
+	EntryChecksumType encoding.EntryChecksumType
 }
 
 // DefaultPreAllocationSize is a segment size which should work well for most use cases.
@@ -94,15 +95,15 @@ func CreateSegment(directory string, firstSequenceNumber uint64, createSegmentCo
 	}
 
 	// Write the header to the segment file and flush the content to stable storage.
-	header := Header{
-		Magic:               Magic,
-		Version:             HeaderVersion,
+	header := encoding.Header{
+		Magic:               encoding.Magic,
+		Version:             encoding.HeaderVersion,
 		EntryLengthEncoding: createSegmentConfig.EntryLengthEncoding,
 		EntryChecksumType:   createSegmentConfig.EntryChecksumType,
 		FirstSequenceNumber: firstSequenceNumber,
 	}
-	var buffer [HeaderSize]byte
-	if err := WriteHeader(file, buffer[:], header); err != nil {
+	var buffer [encoding.HeaderSize]byte
+	if err := encoding.WriteHeader(file, buffer[:], header); err != nil {
 		return nil, fmt.Errorf("writing WAL header to segment file %q: %w", newSegmentFilePath, err)
 	}
 	if err := file.Sync(); err != nil {
@@ -130,7 +131,7 @@ func CreateSegment(directory string, firstSequenceNumber uint64, createSegmentCo
 // NewSegmentWriterConfig is the configuration required for a call to NewSegmentWriter.
 type NewSegmentWriterConfig struct {
 	// Header is the segment file header.
-	Header Header
+	Header encoding.Header
 
 	// Offset is the current position in bytes from the start of the file.
 	Offset int64
@@ -141,12 +142,12 @@ type NewSegmentWriterConfig struct {
 
 // NewSegmentWriter creates a SegmentWriter from a file which is already open.
 func NewSegmentWriter(file SegmentWriterFile, newSegmentWriterConfig NewSegmentWriterConfig) (*SegmentWriter, error) {
-	entryLengthWriter, err := GetEntryLengthWriter(newSegmentWriterConfig.Header.EntryLengthEncoding)
+	entryLengthWriter, err := encoding.GetEntryLengthWriter(newSegmentWriterConfig.Header.EntryLengthEncoding)
 	if err != nil {
 		return nil, err
 	}
 
-	entryChecksumWriter, err := GetEntryChecksumWriter(newSegmentWriterConfig.Header.EntryChecksumType)
+	entryChecksumWriter, err := encoding.GetEntryChecksumWriter(newSegmentWriterConfig.Header.EntryChecksumType)
 	if err != nil {
 		return nil, err
 	}
@@ -168,7 +169,7 @@ func (w *SegmentWriter) FilePath() string {
 }
 
 // Header returns the segment file header.
-func (w *SegmentWriter) Header() Header {
+func (w *SegmentWriter) Header() encoding.Header {
 	return w.header
 }
 

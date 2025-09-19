@@ -1,5 +1,7 @@
 package wal
 
+import "write-ahead-log/internal/segment"
+
 // SyncPolicyNone is never flushing the content of the segment to disk. This might improve performance but increases
 // the risk of data loss in case of a hardware failure.
 type SyncPolicyNone struct{}
@@ -12,7 +14,7 @@ func NewSyncPolicyNone() *SyncPolicyNone {
 	return &SyncPolicyNone{}
 }
 
-func (s *SyncPolicyNone) Startup(segmentWriter *SegmentWriter) error {
+func (s *SyncPolicyNone) Startup(segmentWriter *segment.SegmentWriter) error {
 	return nil
 }
 

@@ -2,12 +2,14 @@ package wal
 
 import (
 	"fmt"
+
+	"write-ahead-log/internal/segment"
 )
 
 // SyncPolicyImmediate is flushing the content of the segment to disk after every entry. This reduces the chances of
 // data loss because of hardware failure, but it has a negative impact on performance.
 type SyncPolicyImmediate struct {
-	segmentWriter *SegmentWriter
+	segmentWriter *segment.SegmentWriter
 }
 
 // SyncPolicyImmediate implements SyncPolicy.
@@ -18,7 +20,7 @@ func NewSyncPolicyImmediate() *SyncPolicyImmediate {
 	return &SyncPolicyImmediate{}
 }
 
-func (s *SyncPolicyImmediate) Startup(segmentWriter *SegmentWriter) error {
+func (s *SyncPolicyImmediate) Startup(segmentWriter *segment.SegmentWriter) error {
 	s.segmentWriter = segmentWriter
 	return nil
 }

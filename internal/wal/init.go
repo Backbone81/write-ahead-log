@@ -1,8 +1,13 @@
 package wal
 
+import (
+	"write-ahead-log/internal/encoding"
+	"write-ahead-log/internal/segment"
+)
+
 // IsInitialized reports if there is already a write-ahead log available in the given directory.
 func IsInitialized(directory string) (bool, error) {
-	segments, err := GetSegments(directory)
+	segments, err := segment.GetSegments(directory)
 	if err != nil {
 		return false, err
 	}
@@ -13,17 +18,17 @@ func IsInitialized(directory string) (bool, error) {
 func Init(directory string, options ...WriterOption) error {
 	// We use a writer here, to reuse its options. But we do not work with that writer.
 	newWriter := Writer{
-		preAllocationSize:   DefaultPreAllocationSize,
-		maxSegmentSize:      DefaultPreAllocationSize,
-		entryLengthEncoding: DefaultEntryLengthEncoding,
-		entryChecksumType:   DefaultEntryChecksumType,
+		preAllocationSize:   segment.DefaultPreAllocationSize,
+		maxSegmentSize:      segment.DefaultPreAllocationSize,
+		entryLengthEncoding: encoding.DefaultEntryLengthEncoding,
+		entryChecksumType:   encoding.DefaultEntryChecksumType,
 		syncPolicy:          NewSyncPolicyImmediate(),
 		rolloverCallback:    DefaultRolloverCallback,
 	}
 	for _, option := range options {
 		option(&newWriter)
 	}
-	segmentWriter, err := CreateSegment(directory, newWriter.firstSequenceNumber, CreateSegmentConfig{
+	segmentWriter, err := segment.CreateSegment(directory, newWriter.firstSequenceNumber, segment.CreateSegmentConfig{
 		PreAllocationSize:   newWriter.preAllocationSize,
 		EntryLengthEncoding: newWriter.entryLengthEncoding,
 		EntryChecksumType:   newWriter.entryChecksumType,

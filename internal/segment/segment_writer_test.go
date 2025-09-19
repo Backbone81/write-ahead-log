@@ -1,4 +1,4 @@
-package wal_test
+package segment_test
 
 import (
 	"crypto/rand"
@@ -9,12 +9,14 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	"write-ahead-log/internal/wal"
+	"write-ahead-log/internal/encoding"
+	"write-ahead-log/internal/segment"
+	"write-ahead-log/internal/utils"
 )
 
 var _ = Describe("SegmentWriter", func() {
-	for _, entryLengthEncoding := range wal.EntryLengthEncodings {
-		for _, entryChecksumType := range wal.EntryChecksumTypes {
+	for _, entryLengthEncoding := range encoding.EntryLengthEncodings {
+		for _, entryChecksumType := range encoding.EntryChecksumTypes {
 			Context(fmt.Sprintf("With length encoding %s and entry checksum %s", entryLengthEncoding, entryChecksumType), func() {
 				var dir string
 
@@ -32,8 +34,8 @@ var _ = Describe("SegmentWriter", func() {
 					entriesBefore, err := os.ReadDir(dir)
 					Expect(err).ToNot(HaveOccurred())
 
-					writer, err := wal.CreateSegment(dir, 0, wal.CreateSegmentConfig{
-						PreAllocationSize:   wal.DefaultPreAllocationSize,
+					writer, err := segment.CreateSegment(dir, 0, segment.CreateSegmentConfig{
+						PreAllocationSize:   segment.DefaultPreAllocationSize,
 						EntryLengthEncoding: entryLengthEncoding,
 						EntryChecksumType:   entryChecksumType,
 					})
@@ -48,8 +50,8 @@ var _ = Describe("SegmentWriter", func() {
 				})
 
 				It("should write to the segment file", func() {
-					writer, err := wal.CreateSegment(dir, 0, wal.CreateSegmentConfig{
-						PreAllocationSize:   wal.DefaultPreAllocationSize,
+					writer, err := segment.CreateSegment(dir, 0, segment.CreateSegmentConfig{
+						PreAllocationSize:   segment.DefaultPreAllocationSize,
 						EntryLengthEncoding: entryLengthEncoding,
 						EntryChecksumType:   entryChecksumType,
 					})
@@ -69,9 +71,9 @@ var _ = Describe("SegmentWriter", func() {
 	}
 
 	It("should correctly report sequence numbers", func() {
-		writer, err := wal.NewSegmentWriter(&SegmentWriterFileDiscard{}, wal.NewSegmentWriterConfig{
-			Header: wal.DefaultHeader,
-			Offset: wal.HeaderSize,
+		writer, err := segment.NewSegmentWriter(&utils.SegmentWriterFileDiscard{}, segment.NewSegmentWriterConfig{
+			Header: encoding.DefaultHeader,
+			Offset: encoding.HeaderSize,
 		})
 		Expect(err).ToNot(HaveOccurred())
 		defer func() {
@@ -88,34 +90,34 @@ var _ = Describe("SegmentWriter", func() {
 	})
 
 	It("should correctly report offsets", func() {
-		writer, err := wal.NewSegmentWriter(&SegmentWriterFileDiscard{}, wal.NewSegmentWriterConfig{
-			Header: wal.DefaultHeader,
-			Offset: wal.HeaderSize,
+		writer, err := segment.NewSegmentWriter(&utils.SegmentWriterFileDiscard{}, segment.NewSegmentWriterConfig{
+			Header: encoding.DefaultHeader,
+			Offset: encoding.HeaderSize,
 		})
 		Expect(err).ToNot(HaveOccurred())
 		defer func() {
 			Expect(writer.Close()).To(Succeed())
 		}()
 
-		Expect(writer.Offset()).To(Equal(int64(wal.HeaderSize)))
+		Expect(writer.Offset()).To(Equal(int64(encoding.HeaderSize)))
 		Expect(writer.AppendEntry([]byte("foo"))).Error().ToNot(HaveOccurred())
-		Expect(writer.Offset()).To(Equal(int64(wal.HeaderSize + 1*(4+3+4))))
+		Expect(writer.Offset()).To(Equal(int64(encoding.HeaderSize + 1*(4+3+4))))
 		Expect(writer.AppendEntry([]byte("foo"))).Error().ToNot(HaveOccurred())
-		Expect(writer.Offset()).To(Equal(int64(wal.HeaderSize + 2*(4+3+4))))
+		Expect(writer.Offset()).To(Equal(int64(encoding.HeaderSize + 2*(4+3+4))))
 		Expect(writer.AppendEntry([]byte("foo"))).Error().ToNot(HaveOccurred())
-		Expect(writer.Offset()).To(Equal(int64(wal.HeaderSize + 3*(4+3+4))))
+		Expect(writer.Offset()).To(Equal(int64(encoding.HeaderSize + 3*(4+3+4))))
 	})
 })
 
 func BenchmarkSegmentWriter_AppendEntry(b *testing.B) {
-	for _, entryLengthEncoding := range wal.EntryLengthEncodings {
-		for _, entryChecksumType := range wal.EntryChecksumTypes {
+	for _, entryLengthEncoding := range encoding.EntryLengthEncodings {
+		for _, entryChecksumType := range encoding.EntryChecksumTypes {
 			for _, dataSize := range []int{0, 1, 2, 4, 8, 16} {
 				data := make([]byte, dataSize*1024)
-				segmentWriter, err := wal.NewSegmentWriter(&SegmentWriterFileDiscard{}, wal.NewSegmentWriterConfig{
-					Header: wal.Header{
-						Magic:               wal.Magic,
-						Version:             wal.HeaderVersion,
+				segmentWriter, err := segment.NewSegmentWriter(&utils.SegmentWriterFileDiscard{}, segment.NewSegmentWriterConfig{
+					Header: encoding.Header{
+						Magic:               encoding.Magic,
+						Version:             encoding.HeaderVersion,
 						EntryLengthEncoding: entryLengthEncoding,
 						EntryChecksumType:   entryChecksumType,
 					},

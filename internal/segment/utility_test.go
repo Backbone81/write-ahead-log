@@ -1,4 +1,4 @@
-package wal_test
+package segment_test
 
 import (
 	. "github.com/onsi/ginkgo/v2"

@@ -5,6 +5,8 @@ import (
 	"log"
 	"sync"
 	"time"
+
+	"write-ahead-log/internal/segment"
 )
 
 // SyncPolicyPeriodic is flushing segments to disk after having written some number of entries, or after some time
@@ -17,7 +19,7 @@ type SyncPolicyPeriodic struct {
 	syncAfterEntryCount int
 	syncEvery           time.Duration
 
-	segmentWriter     *SegmentWriter
+	segmentWriter     *segment.SegmentWriter
 	syncTicker        *time.Ticker
 	shutdown          chan struct{}
 	shutdownWaitGroup sync.WaitGroup
@@ -36,7 +38,7 @@ func NewSyncPolicyPeriodic(syncAfterEntryCount int, syncEvery time.Duration) *Sy
 	}
 }
 
-func (s *SyncPolicyPeriodic) Startup(segmentWriter *SegmentWriter) error {
+func (s *SyncPolicyPeriodic) Startup(segmentWriter *segment.SegmentWriter) error {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 

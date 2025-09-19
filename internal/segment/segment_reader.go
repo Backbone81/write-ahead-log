@@ -1,4 +1,4 @@
-package wal
+package segment
 
 import (
 	"errors"
@@ -7,6 +7,7 @@ import (
 	"os"
 	"path"
 
+	"write-ahead-log/internal/encoding"
 	"write-ahead-log/internal/utils"
 )
 
@@ -29,7 +30,7 @@ type SegmentReader struct {
 	file SegmentReaderFile
 
 	// The header of the segment file.
-	header Header
+	header encoding.Header
 
 	// The current offset from the start of the file in bytes. This is used together with fileSize to calculate the
 	// available data until the end of the file, and to reset to a former offset after a failed read of an entry.
@@ -39,10 +40,10 @@ type SegmentReader struct {
 	nextSequenceNumber uint64
 
 	// The reader to decode the length of an entry.
-	entryLengthReader EntryLengthReader
+	entryLengthReader encoding.EntryLengthReader
 
 	// The reader to calculate and read the checksum.
-	entryChecksumReader EntryChecksumReader
+	entryChecksumReader encoding.EntryChecksumReader
 
 	// The buffer to hold the entry data.
 	data []byte
@@ -86,8 +87,8 @@ func openSegment(segmentFilePath string, firstSequenceNumber uint64) (*SegmentRe
 		return nil, fmt.Errorf("opening file: %w", err)
 	}
 
-	var buffer [HeaderSize]byte
-	header, err := ReadHeader(file, buffer[:])
+	var buffer [encoding.HeaderSize]byte
+	header, err := encoding.ReadHeader(file, buffer[:])
 	if err != nil {
 		return nil, fmt.Errorf("reading header: %w", err)
 	}
@@ -123,7 +124,7 @@ func openSegment(segmentFilePath string, firstSequenceNumber uint64) (*SegmentRe
 // NewSegmentReaderConfig is the configuration required for a call to NewSegmentReader.
 type NewSegmentReaderConfig struct {
 	// Header is the segment file header.
-	Header Header
+	Header encoding.Header
 
 	// Offset is the current position in bytes from the start of the file.
 	Offset int64
@@ -137,12 +138,12 @@ type NewSegmentReaderConfig struct {
 
 // NewSegmentReader creates a SegmentReader from a file which is already open.
 func NewSegmentReader(file SegmentReaderFile, newSegmentReaderConfig NewSegmentReaderConfig) (*SegmentReader, error) {
-	entryLengthReader, err := GetEntryLengthReader(newSegmentReaderConfig.Header.EntryLengthEncoding)
+	entryLengthReader, err := encoding.GetEntryLengthReader(newSegmentReaderConfig.Header.EntryLengthEncoding)
 	if err != nil {
 		return nil, err
 	}
 
-	entryChecksumReader, err := GetEntryChecksumReader(newSegmentReaderConfig.Header.EntryChecksumType)
+	entryChecksumReader, err := encoding.GetEntryChecksumReader(newSegmentReaderConfig.Header.EntryChecksumType)
 	if err != nil {
 		return nil, err
 	}
@@ -165,7 +166,7 @@ func (r *SegmentReader) FilePath() string {
 }
 
 // Header returns the segment file header.
-func (r *SegmentReader) Header() Header {
+func (r *SegmentReader) Header() encoding.Header {
 	return r.header
 }
 
@@ -203,7 +204,7 @@ func (r *SegmentReader) next() error {
 	// Read the length of the entry.
 	// We use the data slice as scratch space for converting bytes to integers. We assume that the data slice can always
 	// hold at least the maximum length encoding. This is true for a pre-allocated data slice.
-	length, lengthBytes, err := r.entryLengthReader(r.file, r.data[:MaxLengthBufferLen])
+	length, lengthBytes, err := r.entryLengthReader(r.file, r.data[:encoding.MaxLengthBufferLen])
 	if err != nil {
 		return err
 	}
@@ -216,7 +217,7 @@ func (r *SegmentReader) next() error {
 	// Read the data part of the entry.
 	// As we are using the data slice as scratch space as well, we need to make sure that we not only can hold the data
 	// itself, but length and checksum as well.
-	requiredDataSize := MaxLengthBufferLen + length + MaxChecksumBufferLen
+	requiredDataSize := encoding.MaxLengthBufferLen + length + encoding.MaxChecksumBufferLen
 	if uint64(len(r.data)) < requiredDataSize {
 		// We increase the data slice by a factor of 1.5 to amortise memory allocations over multiple calls. A naive
 		// implementation would do a "requiredDataSize * 3 / 2" to get the desired new size. But that approach runs

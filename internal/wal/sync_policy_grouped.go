@@ -5,6 +5,8 @@ import (
 	"log"
 	"sync"
 	"time"
+
+	"write-ahead-log/internal/segment"
 )
 
 // SyncPolicyGrouped is batching multiple changes of the segment to disk after every entry. This reduces the chances of
@@ -15,7 +17,7 @@ type SyncPolicyGrouped struct {
 	mutex sync.Mutex
 
 	syncAfter         time.Duration
-	segmentWriter     *SegmentWriter
+	segmentWriter     *segment.SegmentWriter
 	syncTimer         *time.Timer
 	shutdown          chan struct{}
 	shutdownWaitGroup sync.WaitGroup
@@ -35,7 +37,7 @@ func NewSyncPolicyGrouped(syncAfter time.Duration) *SyncPolicyGrouped {
 	}
 }
 
-func (s *SyncPolicyGrouped) Startup(segmentWriter *SegmentWriter) error {
+func (s *SyncPolicyGrouped) Startup(segmentWriter *segment.SegmentWriter) error {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 

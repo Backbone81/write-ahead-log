@@ -6,6 +6,8 @@ import (
 	"io"
 	"time"
 
+	"write-ahead-log/internal/encoding"
+	"write-ahead-log/internal/segment"
 	"write-ahead-log/internal/utils"
 )
 
@@ -18,7 +20,7 @@ type Reader struct {
 	noCopy utils.NoCopy
 
 	// The currently active segment reader where we are reading entries from.
-	segmentReader *SegmentReader
+	segmentReader *segment.SegmentReader
 
 	// The error for the last operation. If this is nil, the value of the segment reader can be used. We need to keep
 	// our own err around, because there are errors which can occur when opening segment files. Therefore, we can not
@@ -31,14 +33,14 @@ type Reader struct {
 func NewReader(directory string, sequenceNumber uint64) (*Reader, error) {
 	// Identify which segment contains the requested sequence number. The segment itself is the first sequence number
 	// in the segment.
-	segment, err := SegmentFromSequenceNumber(directory, sequenceNumber)
+	segmentNumber, err := segment.SegmentFromSequenceNumber(directory, sequenceNumber)
 	if err != nil {
 		return nil, err
 	}
 
 	// Create a segment reader for the given segment and make sure that the segment file name actually matches to the
 	// first sequence number as documented in the segment header.
-	segmentReader, err := OpenSegment(directory, segment)
+	segmentReader, err := segment.OpenSegment(directory, segmentNumber)
 	if err != nil {
 		return nil, err
 	}
@@ -68,7 +70,7 @@ func (r *Reader) FilePath() string {
 }
 
 // Header returns the segment file header.
-func (r *Reader) Header() Header {
+func (r *Reader) Header() encoding.Header {
 	return r.segmentReader.Header()
 }
 
@@ -100,7 +102,7 @@ func (r *Reader) Next() bool {
 		return false
 	}
 
-	nextSegmentReader, err := OpenSegment(SegmentFileName(r.segmentReader.NextSequenceNumber()), r.segmentReader.NextSequenceNumber())
+	nextSegmentReader, err := segment.OpenSegment(segment.SegmentFileName(r.segmentReader.NextSequenceNumber()), r.segmentReader.NextSequenceNumber())
 	if err != nil {
 		// We keep the old error in r.err because this wil still signal that no entry could be read.
 		return false
@@ -121,7 +123,7 @@ func (r *Reader) Next() bool {
 
 // Value returns the last entry read from the segment file. The values are only valid after the first call to Next()
 // and while Err() is nil.
-func (r *Reader) Value() SegmentReaderValue {
+func (r *Reader) Value() segment.SegmentReaderValue {
 	return r.segmentReader.Value()
 }
 
@@ -136,8 +138,8 @@ func (r *Reader) Err() error {
 // The reader must not be used any more after a call to this function.
 func (r *Reader) ToWriter(options ...WriterOption) (*Writer, error) {
 	newWriter := Writer{
-		preAllocationSize:   DefaultPreAllocationSize,
-		maxSegmentSize:      DefaultPreAllocationSize,
+		preAllocationSize:   segment.DefaultPreAllocationSize,
+		maxSegmentSize:      segment.DefaultPreAllocationSize,
 		entryLengthEncoding: r.segmentReader.Header().EntryLengthEncoding,
 		entryChecksumType:   r.segmentReader.Header().EntryChecksumType,
 		rolloverCallback:    DefaultRolloverCallback,

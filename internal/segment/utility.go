@@ -1,7 +1,6 @@
-package wal
+package segment
 
 import (
-	"encoding/binary"
 	"fmt"
 	"os"
 	"regexp"
@@ -68,6 +67,3 @@ func SegmentFromSequenceNumber(directory string, sequenceNumber uint64) (uint64,
 func SegmentFileName(sequenceNumber uint64) string {
 	return fmt.Sprintf("%020d.wal", sequenceNumber)
 }
-
-// Endian is the endianness the write-ahead log uses for serializing/deserializing integers to file.
-var Endian = binary.LittleEndian
