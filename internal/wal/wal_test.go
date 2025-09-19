@@ -2,6 +2,7 @@ package wal_test
 
 import (
 	"fmt"
+	"math"
 	"os"
 	"path"
 	"sync"
@@ -285,6 +286,69 @@ var _ = Describe("WAL", func() {
 		}
 	}
 })
+
+//nolint:gocognit,cyclop
+func BenchmarkReader_Next(b *testing.B) {
+	for _, entryLengthEncoding := range []encoding.EntryLengthEncoding{encoding.DefaultEntryLengthEncoding} {
+		for _, entryChecksumType := range []encoding.EntryChecksumType{encoding.DefaultEntryChecksumType} {
+			for _, dataSize := range []int{0, 1, 2, 4, 8, 16} {
+				dir := b.TempDir()
+				data := make([]byte, dataSize*1024)
+				if err := wal.Init(
+					dir,
+					wal.WithEntryLengthEncoding(entryLengthEncoding),
+					wal.WithEntryChecksumType(entryChecksumType),
+					wal.WithPreAllocationSize(0),
+				); err != nil {
+					b.Fatal(err)
+				}
+				reader, err := wal.NewReader(dir, 0)
+				if err != nil {
+					b.Fatal(err)
+				}
+				reader.Next()
+				writer, err := reader.ToWriter(
+					wal.WithSyncPolicyNone(),
+					wal.WithMaxSegmentSize(math.MaxInt64),
+				)
+				if err != nil {
+					b.Fatal(err)
+				}
+				for range 1000 {
+					if _, err := writer.AppendEntry(data); err != nil {
+						b.Fatal(err)
+					}
+				}
+				if err := writer.Close(); err != nil {
+					b.Fatal(err)
+				}
+				reader, err = wal.NewReader(dir, 0)
+				if err != nil {
+					b.Fatal(err)
+				}
+				b.Run(fmt.Sprintf("%s %s %d KB", entryLengthEncoding, entryChecksumType, dataSize), func(b *testing.B) {
+					for range b.N {
+						if !reader.Next() {
+							if err := reader.Close(); err != nil {
+								b.Fatal(err)
+							}
+							reader, err = wal.NewReader(dir, 0)
+							if err != nil {
+								b.Fatal(err)
+							}
+						}
+					}
+					timeNeeded := b.Elapsed().Seconds()
+					dataRead := b.N * dataSize * 1024
+					b.ReportMetric(float64(dataRead/1024/1024)/timeNeeded, "MB/s")
+				})
+				if err := reader.Close(); err != nil {
+					b.Fatal(err)
+				}
+			}
+		}
+	}
+}
 
 //nolint:gocognit,cyclop
 func BenchmarkWriter_AppendEntry_Serial(b *testing.B) {

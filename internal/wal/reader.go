@@ -106,6 +106,13 @@ func (r *Reader) Next() bool {
 		return false
 	}
 
+	// When we did hit EOF, we only want to move to the next segment when we did in fact read at least one entry.
+	// Otherwise, we are caught in an endless loop, where we try to re-open the same file again and again.
+	if r.segmentReader.NextSequenceNumber() == r.segmentReader.Header().FirstSequenceNumber {
+		// We did not read a single entry, so stay where we are.
+		return false
+	}
+
 	nextSegmentReader, err := segment.OpenSegment(r.directory, r.segmentReader.NextSequenceNumber())
 	if err != nil {
 		// We keep the old error in r.err because this wil still signal that no entry could be read.
