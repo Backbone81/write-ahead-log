@@ -1,7 +1,7 @@
 package wal
 
 import (
-	intencoding "write-ahead-log/internal/encoding"
+	intencoding "github.com/backbone81/write-ahead-log/internal/encoding"
 )
 
 // EntryLengthEncoding describes the way the length of an entry is encoded.

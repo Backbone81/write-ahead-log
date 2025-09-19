@@ -1,8 +1,8 @@
 package wal
 
 import (
-	"write-ahead-log/internal/encoding"
-	"write-ahead-log/internal/segment"
+	"github.com/backbone81/write-ahead-log/internal/encoding"
+	"github.com/backbone81/write-ahead-log/internal/segment"
 )
 
 // IsInitialized reports if there is already a write-ahead log available in the given directory.

@@ -6,7 +6,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	"write-ahead-log/internal/wal"
+	"github.com/backbone81/write-ahead-log/internal/wal"
 )
 
 var _ = Describe("Init", func() {

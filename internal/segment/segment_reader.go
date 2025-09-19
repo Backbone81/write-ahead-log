@@ -7,8 +7,8 @@ import (
 	"os"
 	"path"
 
-	"write-ahead-log/internal/encoding"
-	"write-ahead-log/internal/utils"
+	"github.com/backbone81/write-ahead-log/internal/encoding"
+	"github.com/backbone81/write-ahead-log/internal/utils"
 )
 
 var ErrEntryNone = errors.New("this is no WAL entry")

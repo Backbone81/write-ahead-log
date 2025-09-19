@@ -1,6 +1,6 @@
 package wal
 
-import intencoding "write-ahead-log/internal/encoding"
+import intencoding "github.com/backbone81/write-ahead-log/internal/encoding"
 
 // EntryChecksumType describes the type of checksum applied to an entry.
 type EntryChecksumType = intencoding.EntryChecksumType

@@ -3,7 +3,7 @@ package main
 import (
 	"log"
 
-	"write-ahead-log/pkg/wal"
+	"github.com/backbone81/write-ahead-log/pkg/wal"
 )
 
 func main() {

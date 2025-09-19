@@ -3,7 +3,7 @@ package wal
 import (
 	"fmt"
 
-	"write-ahead-log/internal/segment"
+	"github.com/backbone81/write-ahead-log/internal/segment"
 )
 
 // SyncPolicyImmediate is flushing the content of the segment to disk after every entry. This reduces the chances of

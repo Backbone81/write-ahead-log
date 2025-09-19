@@ -1,6 +1,6 @@
 package wal
 
-import intwal "write-ahead-log/internal/wal"
+import intwal "github.com/backbone81/write-ahead-log/internal/wal"
 
 // Writer provides the main functionality for writing to the write-ahead log. It abstracts away the fact that the WAL
 // is distributed over several segment files and does rollover into new segments as necessary.

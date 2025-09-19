@@ -1,6 +1,6 @@
 package wal
 
-import "write-ahead-log/internal/segment"
+import "github.com/backbone81/write-ahead-log/internal/segment"
 
 // SyncPolicy is the interface every sync policy needs to implement.
 type SyncPolicy interface {

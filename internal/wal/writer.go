@@ -9,8 +9,8 @@ import (
 	"sync"
 	"time"
 
-	"write-ahead-log/internal/encoding"
-	"write-ahead-log/internal/segment"
+	"github.com/backbone81/write-ahead-log/internal/encoding"
+	"github.com/backbone81/write-ahead-log/internal/segment"
 )
 
 // Writer provides the main functionality for writing to the write-ahead log. It abstracts away the fact that the WAL

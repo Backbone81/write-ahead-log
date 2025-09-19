@@ -9,7 +9,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	"write-ahead-log/internal/encoding"
+	"github.com/backbone81/write-ahead-log/internal/encoding"
 )
 
 var _ = Describe("EntryLength", func() {

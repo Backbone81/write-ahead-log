@@ -1,6 +1,6 @@
 package wal
 
-import intwal "write-ahead-log/internal/wal"
+import intwal "github.com/backbone81/write-ahead-log/internal/wal"
 
 // IsInitialized reports if there is already a write-ahead log available in the given directory.
 var IsInitialized = intwal.IsInitialized

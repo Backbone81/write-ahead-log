@@ -9,9 +9,9 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	"write-ahead-log/internal/encoding"
-	"write-ahead-log/internal/segment"
-	"write-ahead-log/internal/utils"
+	"github.com/backbone81/write-ahead-log/internal/encoding"
+	"github.com/backbone81/write-ahead-log/internal/segment"
+	"github.com/backbone81/write-ahead-log/internal/utils"
 )
 
 var _ = Describe("SegmentWriter", func() {

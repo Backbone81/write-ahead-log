@@ -11,7 +11,7 @@ Note that no memory allocations happen for reading and writing which is importan
 ```
 goos: linux
 goarch: amd64
-pkg: write-ahead-log/internal/encoding
+pkg: github.com/backbone81/write-ahead-log/internal/encoding
 cpu: Intel(R) Core(TM) i9-14900K
 BenchmarkEntryChecksumWriter/crc32_on_0_KB-32           205598827                5.836 ns/op           0 B/op          0 allocs/op
 BenchmarkEntryChecksumWriter/crc32_on_1_KB-32           47105160                25.54 ns/op            0 B/op          0 allocs/op
@@ -64,7 +64,7 @@ Note that no memory allocations happen for reading and writing which is importan
 ```
 goos: linux
 goarch: amd64
-pkg: write-ahead-log/internal/segment
+pkg: github.com/backbone81/write-ahead-log/internal/segment
 cpu: Intel(R) Core(TM) i9-14900K
 BenchmarkSegmentReader_Next/uint16_crc32_0_KB-32                47161341                25.35 ns/op            0 B/op          0 allocs/op
 BenchmarkSegmentReader_Next/uint16_crc32_1_KB-32                20667250                57.93 ns/op            0 B/op          0 allocs/op
@@ -187,7 +187,7 @@ The benchmark is running against a disk which influences performance.
 ```
 goos: linux
 goarch: amd64
-pkg: write-ahead-log/internal/wal
+pkg: github.com/backbone81/write-ahead-log/internal/wal
 cpu: Intel(R) Core(TM) i9-14900K
 BenchmarkReader_Next/uint32_crc32_0_KB-32        2619058               437.6 ns/op            14 B/op          0 allocs/op
 BenchmarkReader_Next/uint32_crc32_1_KB-32        1648290               706.9 ns/op      1380.98 MB/s          14 B/op          0 allocs/op

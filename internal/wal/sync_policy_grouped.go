@@ -6,7 +6,7 @@ import (
 	"sync"
 	"time"
 
-	"write-ahead-log/internal/segment"
+	"github.com/backbone81/write-ahead-log/internal/segment"
 )
 
 // SyncPolicyGrouped is batching multiple changes of the segment to disk after every entry. This reduces the chances of

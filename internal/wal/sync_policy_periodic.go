@@ -6,7 +6,7 @@ import (
 	"sync"
 	"time"
 
-	"write-ahead-log/internal/segment"
+	"github.com/backbone81/write-ahead-log/internal/segment"
 )
 
 // SyncPolicyPeriodic is flushing segments to disk after having written some number of entries, or after some time

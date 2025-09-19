@@ -1,4 +1,4 @@
-module write-ahead-log
+module github.com/backbone81/write-ahead-log
 
 go 1.24
 

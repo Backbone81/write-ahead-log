@@ -6,12 +6,12 @@ import (
 	"io"
 	"time"
 
-	"write-ahead-log/internal/encoding"
-	"write-ahead-log/internal/segment"
-	"write-ahead-log/internal/utils"
+	"github.com/backbone81/write-ahead-log/internal/encoding"
+	"github.com/backbone81/write-ahead-log/internal/segment"
+	"github.com/backbone81/write-ahead-log/internal/utils"
 )
 
-// Reader provides functionality to read the write-ahead-log. It abstracts away the fact that the write-ahead log is
+// Reader provides functionality to read the write-ahead log. It abstracts away the fact that the write-ahead log is
 // split into multiple segments.
 //
 // Instances of this struct are NOT safe for concurrent use. Either use it on a single Go routine or provide your own

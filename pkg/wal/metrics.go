@@ -3,8 +3,8 @@ package wal
 import (
 	"github.com/prometheus/client_golang/prometheus"
 
-	intsegment "write-ahead-log/internal/segment"
-	intwal "write-ahead-log/internal/wal"
+	intsegment "github.com/backbone81/write-ahead-log/internal/segment"
+	intwal "github.com/backbone81/write-ahead-log/internal/wal"
 )
 
 // RegisterMetrics registers all metrics collectors with the given prometheus registerer.
