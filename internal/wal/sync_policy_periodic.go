@@ -33,8 +33,8 @@ var _ SyncPolicy = (*SyncPolicyPeriodic)(nil)
 // NewSyncPolicyPeriodic creates a new SyncPolicyPeriodic.
 func NewSyncPolicyPeriodic(syncAfterEntryCount int, syncEvery time.Duration) *SyncPolicyPeriodic {
 	return &SyncPolicyPeriodic{
-		syncAfterEntryCount: syncAfterEntryCount,
-		syncEvery:           syncEvery,
+		syncAfterEntryCount: max(syncAfterEntryCount, 1),
+		syncEvery:           max(syncEvery, 100*time.Microsecond),
 	}
 }
 

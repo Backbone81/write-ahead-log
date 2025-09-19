@@ -26,6 +26,9 @@ type Reader struct {
 	// our own err around, because there are errors which can occur when opening segment files. Therefore, we can not
 	// rely on the segment reader err only.
 	err error
+
+	// The directory the reader is reading segments from.
+	directory string
 }
 
 // NewReader creates a new Reader starting at the given sequence number. It will find the segment the sequence number
@@ -48,6 +51,7 @@ func NewReader(directory string, sequenceNumber uint64) (*Reader, error) {
 	// Move the WAL reader forward until we have reached the desired sequence number.
 	newReader := Reader{
 		segmentReader: segmentReader,
+		directory:     directory,
 	}
 	for newReader.NextSequenceNumber() < sequenceNumber && newReader.Next() {
 		// Skip entry until we have reached our target sequence number.
@@ -102,7 +106,7 @@ func (r *Reader) Next() bool {
 		return false
 	}
 
-	nextSegmentReader, err := segment.OpenSegment(segment.SegmentFileName(r.segmentReader.NextSequenceNumber()), r.segmentReader.NextSequenceNumber())
+	nextSegmentReader, err := segment.OpenSegment(r.directory, r.segmentReader.NextSequenceNumber())
 	if err != nil {
 		// We keep the old error in r.err because this wil still signal that no entry could be read.
 		return false

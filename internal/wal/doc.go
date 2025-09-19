@@ -1,4 +1,4 @@
-// Package wal provides an implementation of a write-ahead log.
+// Package wal provides an implementation of a write-ahead log over multiple segment files.
 //
 // The on-disk structure looks like this:
 //

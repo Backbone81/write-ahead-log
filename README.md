@@ -29,6 +29,7 @@ It supports the following features:
 - Implement segment creation which works on windows and linux
 - Introduce read buffer for better read performance from disk
 - Provide a CLI for inspecting the WAL and to do maintenance
+- Reported file names of segment files contain the .new file extension which is wrong
 
 ## Benchmarks
 

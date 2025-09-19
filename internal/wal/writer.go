@@ -51,7 +51,7 @@ type WriterOption func(w *Writer)
 // Can be used with Init and Reader.ToWriter.
 func WithPreAllocationSize(preAllocationSize int64) WriterOption {
 	return func(w *Writer) {
-		w.preAllocationSize = preAllocationSize
+		w.preAllocationSize = max(preAllocationSize, 0)
 	}
 }
 
@@ -59,7 +59,9 @@ func WithPreAllocationSize(preAllocationSize int64) WriterOption {
 // Can be used with Reader.ToWriter.
 func WithMaxSegmentSize(maxSegmentSize int64) WriterOption {
 	return func(w *Writer) {
-		w.maxSegmentSize = maxSegmentSize
+		// We need to prevent zero entry segments as they would result in duplicate segment file names. We therefore
+		// enforce at least one byte more than the header to have at least one entry in each segment.
+		w.maxSegmentSize = max(maxSegmentSize, encoding.HeaderSize+1)
 	}
 }
 
@@ -211,6 +213,9 @@ func (w *Writer) rollover() error {
 	previousSegment := w.segmentWriter.Header().FirstSequenceNumber
 
 	if err := w.syncPolicy.Shutdown(); err != nil {
+		return err
+	}
+	if err := w.segmentWriter.Truncate(); err != nil {
 		return err
 	}
 	if err := w.segmentWriter.Close(); err != nil {

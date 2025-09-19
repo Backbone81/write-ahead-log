@@ -33,7 +33,7 @@ var _ SyncPolicy = (*SyncPolicyGrouped)(nil)
 
 func NewSyncPolicyGrouped(syncAfter time.Duration) *SyncPolicyGrouped {
 	return &SyncPolicyGrouped{
-		syncAfter: syncAfter,
+		syncAfter: max(syncAfter, 100*time.Microsecond),
 	}
 }
 

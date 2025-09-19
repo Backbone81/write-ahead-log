@@ -18,6 +18,7 @@ type SegmentWriterFile interface {
 	io.WriteCloser
 	Name() string
 	Sync() error
+	Truncate(size int64) error
 }
 
 // SegmentWriter provides functionality for writing to a single segment file.
@@ -225,6 +226,16 @@ func (w *SegmentWriter) Sync() error {
 		log.Printf("WARNING: Sync to disk needed %f seconds which is too slow.\n", duration)
 	}
 	SyncDuration.Observe(duration)
+	return nil
+}
+
+// Truncate sets the size of the segment to the current position. This is needed when the segment has been pre-allocated
+// but is rolled over before reaching the pre-allocated size. Without truncation the segment reader would not see the
+// end of the file.
+func (w *SegmentWriter) Truncate() error {
+	if err := w.file.Truncate(w.offset); err != nil {
+		return err
+	}
 	return nil
 }
 

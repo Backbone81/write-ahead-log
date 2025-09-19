@@ -19,3 +19,7 @@ func (s *SegmentWriterFileDiscard) Sync() error {
 func (s *SegmentWriterFileDiscard) Name() string {
 	return "in-memory-discard"
 }
+
+func (s *SegmentWriterFileDiscard) Truncate(offset int64) error {
+	return nil
+}

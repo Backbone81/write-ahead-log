@@ -21,3 +21,7 @@ func (s *SegmentWriterFileRecorder) Sync() error {
 func (s *SegmentWriterFileRecorder) Name() string {
 	return "in-memory-recorder"
 }
+
+func (s *SegmentWriterFileRecorder) Truncate(offset int64) error {
+	return nil
+}

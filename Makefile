@@ -10,11 +10,11 @@ all: test
 
 .PHONY: test
 test: prepare
-	go test ./...
+	go test $(PACKAGE)
 
 .PHONY: benchmark
 benchmark: prepare
-	go test -bench=. -benchmem ./...
+	go test -run=^$ -bench=. -benchmem $(PACKAGE)
 
 .PHONY: prepare
 prepare:

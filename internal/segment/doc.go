@@ -1,2 +1,2 @@
-// Package segment provides functionality for reading and writing to and from single segment files.
+// Package segment provides functionality for reading and writing single segment files.
 package segment
