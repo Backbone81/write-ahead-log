@@ -199,6 +199,43 @@ var _ = Describe("WAL", func() {
 						Expect(writer.Close()).To(Succeed())
 					})
 
+					It("should report correct file names", func() {
+						By("initialize WAL")
+						Expect(wal.Init(
+							dir,
+							wal.WithEntryLengthEncoding(entryLengthEncoding),
+							wal.WithEntryChecksumType(entryChecksumType),
+							wal.WithPreAllocationSize(0),
+						)).To(Succeed())
+
+						By("move to end of WAL")
+						reader, err := wal.NewReader(dir, 0)
+						Expect(err).ToNot(HaveOccurred())
+						Expect(reader.Next()).To(BeFalse())
+						Expect(reader.FilePath()).ToNot(ContainSubstring(".new"))
+
+						By("create writer")
+						var rolloverCount int
+						writer, err := reader.ToWriter(
+							syncPolicy,
+							wal.WithMaxSegmentSize(0),
+							wal.WithPreAllocationSize(0),
+							wal.WithRolloverCallback(func(previousSegment uint64, nextSegment uint64) {
+								rolloverCount++
+							}),
+						)
+						Expect(err).ToNot(HaveOccurred())
+
+						Expect(writer.FilePath()).ToNot(ContainSubstring(".new"))
+						Expect(writer.AppendEntry([]byte("foo"))).Error().ToNot(HaveOccurred())
+						Expect(writer.FilePath()).ToNot(ContainSubstring(".new"))
+						Expect(writer.AppendEntry([]byte("bar"))).Error().ToNot(HaveOccurred())
+						Expect(writer.FilePath()).ToNot(ContainSubstring(".new"))
+						Expect(rolloverCount).To(Equal(1))
+
+						Expect(writer.Close()).To(Succeed())
+					})
+
 					It("should correctly deal with too small of a segment size", func() {
 						By("initialize WAL")
 						Expect(wal.Init(

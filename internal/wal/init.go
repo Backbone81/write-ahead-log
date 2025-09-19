@@ -41,3 +41,20 @@ func Init(directory string, options ...WriterOption) error {
 	}
 	return nil
 }
+
+// InitIfRequired initializes the write-ahead log if it is not yet initialized.
+func InitIfRequired(directory string) error {
+	initialized, err := IsInitialized(directory)
+	if err != nil {
+		return err
+	}
+
+	if initialized {
+		return nil
+	}
+
+	if err := Init(directory); err != nil {
+		return err
+	}
+	return nil
+}

@@ -14,7 +14,7 @@ test: prepare
 
 .PHONY: benchmark
 benchmark: prepare
-	go test -run=^$ -bench=. -benchmem $(PACKAGE)
+	go test -run=^$$ -bench=. -benchmem $(PACKAGE)
 
 .PHONY: prepare
 prepare:

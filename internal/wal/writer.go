@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"path"
+	"strings"
 	"sync"
 	"time"
 
@@ -15,10 +16,7 @@ import (
 // Writer provides the main functionality for writing to the write-ahead log. It abstracts away the fact that the WAL
 // is distributed over several segment files and does rollover into new segments as necessary.
 //
-// Writer is safe to use from multiple Go routines concurrently, as long as the Writer is locked for every access and
-// function call. You also need to lock the Writer, even when you work with the WAL in a single Go routine. This is
-// necessary, because some sync policies spawn their own Go routines for asynchronous syncs and will take that lock
-// to avoid race conditions.
+// Writer is safe to use from multiple Go routines concurrently.
 //
 // You can only create a writer with the Reader.ToWriter function. This makes sure that you have read all entries before
 // writing to the write-ahead log.
@@ -126,7 +124,11 @@ func (w *Writer) FilePath() string {
 	w.mutex.Lock()
 	defer w.mutex.Unlock()
 
-	return w.segmentWriter.FilePath()
+	// We cut the .new suffix, because during rollover the new segment is created with .new at the end and then renamed
+	// to the correct name after the header has been written. This results in the os.File.Name() still returning the
+	// not existing .new path. Instead of closing, re-opening and seeking the same file again, we opt for cutting the
+	// suffix and let it look like the correct name. This is faster than re-opening the file.
+	return strings.TrimSuffix(w.segmentWriter.FilePath(), ".new")
 }
 
 // Header returns the segment file header.
