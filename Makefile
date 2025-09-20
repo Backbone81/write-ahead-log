@@ -6,7 +6,11 @@ PACKAGE ?= ./...
 export PATH := $(CURDIR)/bin:$(PATH)
 
 .PHONY: all
-all: test
+all: build
+
+.PHONY: build
+build: prepare
+	go build ./cmd/wal-cli
 
 .PHONY: test
 test: prepare

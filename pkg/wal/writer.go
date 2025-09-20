@@ -11,6 +11,9 @@ import intwal "github.com/backbone81/write-ahead-log/internal/wal"
 // writing to the write-ahead log.
 type Writer = intwal.Writer
 
+// WriterOption describes the function signature which all writer options need to implement.
+type WriterOption = intwal.WriterOption
+
 // WithPreAllocationSize overwrites the default pre-allocation size of new segment files.
 // Can be used with Init and Reader.ToWriter.
 var WithPreAllocationSize = intwal.WithPreAllocationSize

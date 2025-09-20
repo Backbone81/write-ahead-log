@@ -103,6 +103,36 @@ func runDemo() error {
 
 See the [examples](examples) folder for more examples.
 
+## CLI
+
+You can also use the CLI for interacting with the write-ahead log. To install:
+
+```
+go install github.com/backbone81/write-ahead-log/cmd/wal-cli@latest
+```
+
+Use the `--help` flag to get an overview of all options:
+
+```
+A tool for interacting with write-ahead logs.
+
+Usage:
+  wal-cli [command]
+
+Available Commands:
+  completion  Generate the autocompletion script for the specified shell
+  describe    Provides detailed information about the write-ahead log.
+  help        Help about any command
+  init        Initializes a new write-ahead log.
+
+Flags:
+  -d, --directory string   The directory the write-ahead log is located in. (default ".")
+  -h, --help               help for wal-cli
+
+Use "wal-cli [command] --help" for more information about a command.
+```
+
+
 ## Length Encoding
 
 The following entry length encodings are currently supported:
@@ -154,5 +184,7 @@ There are several points still open:
   added.
 - Reading from disk might be improved by introducing a bufio.Reader. This might result in less read calls to disk and
   improve read performance. Measurements need to be done to gain insights.
-- A CLI for inspecting a write-ahead log and for doing some maintenance like consolidating multiple segment files into
-  one or changing the configuration might prove valuable for production grade usage.
+- Extend the CLI with functionality to print details for every entry (sequence number, file offset, length).
+- Extend the CLI with functionality for YAML and JSON output.
+- Extend the CLI with functionality for rewriting an existing wal with different settings (entry length encoding, entry
+  checksum type, max segment size)
