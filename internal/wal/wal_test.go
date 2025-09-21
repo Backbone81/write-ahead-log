@@ -366,6 +366,8 @@ func BenchmarkReader_Next(b *testing.B) {
 				if err != nil {
 					b.Fatal(err)
 				}
+				// Do one read before the test to prime the data buffer with the correct size.
+				reader.Next()
 				b.Run(fmt.Sprintf("%s %s %d KB", entryLengthEncoding, entryChecksumType, dataSize), func(b *testing.B) {
 					for range b.N {
 						if !reader.Next() {
@@ -443,7 +445,7 @@ func BenchmarkWriter_AppendEntry_Serial(b *testing.B) {
 	}
 }
 
-//nolint:gocognit,cyclop
+//nolint:gocognit,cyclop,funlen
 func BenchmarkWriter_AppendEntry_Concurrently(b *testing.B) {
 	for _, entryLengthEncoding := range []encoding.EntryLengthEncoding{encoding.DefaultEntryLengthEncoding} {
 		for _, entryChecksumType := range []encoding.EntryChecksumType{encoding.DefaultEntryChecksumType} {
@@ -477,19 +479,34 @@ func BenchmarkWriter_AppendEntry_Concurrently(b *testing.B) {
 						b.Fatal(err)
 					}
 					b.Run(fmt.Sprintf("%s %s %s %d KB", entryLengthEncoding, entryChecksumType, syncPolicyName, dataSize), func(b *testing.B) {
+						// We start the go routines first and let them wait for our start signal. This helps in removing
+						// the memory allocation for the go routine from our benchmark.
+						start := make(chan struct{})
 						var wg sync.WaitGroup
 						wg.Add(b.N)
 						for range b.N {
 							go func() {
 								defer wg.Done()
+								<-start
 								_, err = writer.AppendEntry(data)
 								if err != nil {
 									panic(err)
 								}
 							}()
 						}
+
+						// Append a single entry to prime the write buffer with the correct size
+						if _, err := writer.AppendEntry(data); err != nil {
+							b.Fatal(err)
+						}
+
+						// Now run all concurrent appends and measure the time needed.
+						startTime := time.Now()
+						b.ResetTimer()
+						close(start)
 						wg.Wait()
-						timeNeeded := b.Elapsed().Seconds()
+
+						timeNeeded := time.Since(startTime).Seconds()
 						dataAppended := b.N * dataSize * 1024
 						b.ReportMetric(float64(dataAppended/1024/1024)/timeNeeded, "MB/s")
 					})

@@ -179,7 +179,7 @@ All parts of this library are covered with extensive benchmarks. See [docs/bench
 
 There are several points still open:
 
-- Investigate why the internal/wal benchmarks to have memory allocations.
+- Investigate why the internal/wal benchmarks have memory allocations.
 - Reading from disk might be improved by introducing a bufio.Reader. This might result in less read calls to disk and
   improve read performance. Measurements need to be done to gain insights.
 - Extend the CLI with functionality to print details for every entry (sequence number, file offset, length).

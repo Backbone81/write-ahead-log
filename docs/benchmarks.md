@@ -189,66 +189,66 @@ goos: linux
 goarch: amd64
 pkg: github.com/backbone81/write-ahead-log/internal/wal
 cpu: Intel(R) Core(TM) i9-14900K
-BenchmarkReader_Next/uint32_crc32_0_KB-32        2619058               437.6 ns/op            14 B/op          0 allocs/op
+BenchmarkReader_Next/uint32_crc32_0_KB-32        2619058               437.6 ns/op                            14 B/op          0 allocs/op
 BenchmarkReader_Next/uint32_crc32_1_KB-32        1648290               706.9 ns/op      1380.98 MB/s          14 B/op          0 allocs/op
 BenchmarkReader_Next/uint32_crc32_2_KB-32        1552500               768.4 ns/op      2541.46 MB/s          14 B/op          0 allocs/op
 BenchmarkReader_Next/uint32_crc32_4_KB-32        1417668               843.4 ns/op      4631.05 MB/s          23 B/op          0 allocs/op
 BenchmarkReader_Next/uint32_crc32_8_KB-32        1000000              1058 ns/op        7383.70 MB/s          31 B/op          0 allocs/op
 BenchmarkReader_Next/uint32_crc32_16_KB-32        822733              1459 ns/op        10712.52 MB/s         43 B/op          0 allocs/op
 
-BenchmarkWriter_AppendEntry_Serial/uint32_crc32_periodic_0_KB-32                   15925             73026 ns/op               0 B/op          0 allocs/op
+BenchmarkWriter_AppendEntry_Serial/uint32_crc32_periodic_0_KB-32                   15925             73026 ns/op                               0 B/op          0 allocs/op
 BenchmarkWriter_AppendEntry_Serial/uint32_crc32_periodic_1_KB-32                   15469             78973 ns/op          12.28 MB/s           0 B/op          0 allocs/op
 BenchmarkWriter_AppendEntry_Serial/uint32_crc32_periodic_2_KB-32                   13120             92240 ns/op          20.66 MB/s           0 B/op          0 allocs/op
 BenchmarkWriter_AppendEntry_Serial/uint32_crc32_periodic_4_KB-32                   14372             87425 ns/op          44.57 MB/s           1 B/op          0 allocs/op
 BenchmarkWriter_AppendEntry_Serial/uint32_crc32_periodic_8_KB-32                   12844             88912 ns/op          87.57 MB/s           1 B/op          0 allocs/op
 BenchmarkWriter_AppendEntry_Serial/uint32_crc32_periodic_16_KB-32                  10000            111485 ns/op         139.93 MB/s           5 B/op          0 allocs/op
 
-BenchmarkWriter_AppendEntry_Serial/uint32_crc32_grouped_0_KB-32                      100          15952154 ns/op               4 B/op          0 allocs/op
-BenchmarkWriter_AppendEntry_Serial/uint32_crc32_grouped_1_KB-32                      100          15602721 ns/op               2 B/op          0 allocs/op
-BenchmarkWriter_AppendEntry_Serial/uint32_crc32_grouped_2_KB-32                      100          15470882 ns/op               7 B/op          0 allocs/op
-BenchmarkWriter_AppendEntry_Serial/uint32_crc32_grouped_4_KB-32                      100          16319880 ns/op               0 B/op          0 allocs/op
-BenchmarkWriter_AppendEntry_Serial/uint32_crc32_grouped_8_KB-32                      100          16543850 ns/op               0 B/op          0 allocs/op
+BenchmarkWriter_AppendEntry_Serial/uint32_crc32_grouped_0_KB-32                      100          15952154 ns/op                               4 B/op          0 allocs/op
+BenchmarkWriter_AppendEntry_Serial/uint32_crc32_grouped_1_KB-32                      100          15602721 ns/op                               2 B/op          0 allocs/op
+BenchmarkWriter_AppendEntry_Serial/uint32_crc32_grouped_2_KB-32                      100          15470882 ns/op                               7 B/op          0 allocs/op
+BenchmarkWriter_AppendEntry_Serial/uint32_crc32_grouped_4_KB-32                      100          16319880 ns/op                               0 B/op          0 allocs/op
+BenchmarkWriter_AppendEntry_Serial/uint32_crc32_grouped_8_KB-32                      100          16543850 ns/op                               0 B/op          0 allocs/op
 BenchmarkWriter_AppendEntry_Serial/uint32_crc32_grouped_16_KB-32                     100          16226694 ns/op           0.62 MB/s          16 B/op          0 allocs/op
 
-BenchmarkWriter_AppendEntry_Serial/uint32_crc32_none_0_KB-32                     3822621               283.7 ns/op             0 B/op          0 allocs/op
+BenchmarkWriter_AppendEntry_Serial/uint32_crc32_none_0_KB-32                     3822621               283.7 ns/op                             0 B/op          0 allocs/op
 BenchmarkWriter_AppendEntry_Serial/uint32_crc32_none_1_KB-32                     1675518               689.5 ns/op      1416.21 MB/s           0 B/op          0 allocs/op
 BenchmarkWriter_AppendEntry_Serial/uint32_crc32_none_2_KB-32                     1000000              1071 ns/op        1822.93 MB/s           0 B/op          0 allocs/op
 BenchmarkWriter_AppendEntry_Serial/uint32_crc32_none_4_KB-32                     1000000              1815 ns/op        2152.10 MB/s           0 B/op          0 allocs/op
 BenchmarkWriter_AppendEntry_Serial/uint32_crc32_none_8_KB-32                      340712              3486 ns/op        2240.70 MB/s           1 B/op          0 allocs/op
 BenchmarkWriter_AppendEntry_Serial/uint32_crc32_none_16_KB-32                     180058              6531 ns/op        2392.11 MB/s           5 B/op          0 allocs/op
 
-BenchmarkWriter_AppendEntry_Serial/uint32_crc32_immediate_0_KB-32                    184           6735988 ns/op               0 B/op          0 allocs/op
-BenchmarkWriter_AppendEntry_Serial/uint32_crc32_immediate_1_KB-32                    176           6369914 ns/op               0 B/op          0 allocs/op
-BenchmarkWriter_AppendEntry_Serial/uint32_crc32_immediate_2_KB-32                    228           5525752 ns/op               0 B/op          0 allocs/op
-BenchmarkWriter_AppendEntry_Serial/uint32_crc32_immediate_4_KB-32                    182           6565794 ns/op               0 B/op          0 allocs/op
+BenchmarkWriter_AppendEntry_Serial/uint32_crc32_immediate_0_KB-32                    184           6735988 ns/op                               0 B/op          0 allocs/op
+BenchmarkWriter_AppendEntry_Serial/uint32_crc32_immediate_1_KB-32                    176           6369914 ns/op                               0 B/op          0 allocs/op
+BenchmarkWriter_AppendEntry_Serial/uint32_crc32_immediate_2_KB-32                    228           5525752 ns/op                               0 B/op          0 allocs/op
+BenchmarkWriter_AppendEntry_Serial/uint32_crc32_immediate_4_KB-32                    182           6565794 ns/op                               0 B/op          0 allocs/op
 BenchmarkWriter_AppendEntry_Serial/uint32_crc32_immediate_8_KB-32                    176           6696168 ns/op           0.85 MB/s           0 B/op          0 allocs/op
 BenchmarkWriter_AppendEntry_Serial/uint32_crc32_immediate_16_KB-32                   171           6847013 ns/op           1.71 MB/s           0 B/op          0 allocs/op
 
-BenchmarkWriter_AppendEntry_Concurrently/uint32_crc32_none_0_KB-32               1000000              1067 ns/op             372 B/op          2 allocs/op
-BenchmarkWriter_AppendEntry_Concurrently/uint32_crc32_none_1_KB-32               1000000              1451 ns/op         672.41 MB/s         244 B/op          1 allocs/op
-BenchmarkWriter_AppendEntry_Concurrently/uint32_crc32_none_2_KB-32                581934              1774 ns/op        1100.18 MB/s         147 B/op          1 allocs/op
-BenchmarkWriter_AppendEntry_Concurrently/uint32_crc32_none_4_KB-32                591079              2575 ns/op        1516.40 MB/s         150 B/op          1 allocs/op
-BenchmarkWriter_AppendEntry_Concurrently/uint32_crc32_none_8_KB-32                302647              4191 ns/op        1863.71 MB/s         155 B/op          1 allocs/op
-BenchmarkWriter_AppendEntry_Concurrently/uint32_crc32_none_16_KB-32               155649              7430 ns/op        2102.93 MB/s         160 B/op          1 allocs/op
+BenchmarkWriter_AppendEntry_Concurrently/uint32_crc32_none_0_KB-32               1000000              1281 ns/op                               0 B/op          0 allocs/op
+BenchmarkWriter_AppendEntry_Concurrently/uint32_crc32_none_1_KB-32                953257              1504 ns/op         648.51 MB/s           0 B/op          0 allocs/op
+BenchmarkWriter_AppendEntry_Concurrently/uint32_crc32_none_2_KB-32                567954              1871 ns/op        1043.76 MB/s           0 B/op          0 allocs/op
+BenchmarkWriter_AppendEntry_Concurrently/uint32_crc32_none_4_KB-32                517234              2595 ns/op        1504.76 MB/s           0 B/op          0 allocs/op
+BenchmarkWriter_AppendEntry_Concurrently/uint32_crc32_none_8_KB-32                260772              4505 ns/op        1733.80 MB/s           1 B/op          0 allocs/op
+BenchmarkWriter_AppendEntry_Concurrently/uint32_crc32_none_16_KB-32               160706              7570 ns/op        2064.12 MB/s           5 B/op          0 allocs/op
 
-BenchmarkWriter_AppendEntry_Concurrently/uint32_crc32_immediate_0_KB-32             9644            125048 ns/op             139 B/op          1 allocs/op
-BenchmarkWriter_AppendEntry_Concurrently/uint32_crc32_immediate_1_KB-32            10195            109904 ns/op           8.03 MB/s         139 B/op          1 allocs/op
-BenchmarkWriter_AppendEntry_Concurrently/uint32_crc32_immediate_2_KB-32            12246             90589 ns/op          20.73 MB/s         184 B/op          1 allocs/op
-BenchmarkWriter_AppendEntry_Concurrently/uint32_crc32_immediate_4_KB-32            15260             85259 ns/op          45.35 MB/s         376 B/op          2 allocs/op
-BenchmarkWriter_AppendEntry_Concurrently/uint32_crc32_immediate_8_KB-32            13036             77780 ns/op          99.61 MB/s         195 B/op          1 allocs/op
-BenchmarkWriter_AppendEntry_Concurrently/uint32_crc32_immediate_16_KB-32            4970            268525 ns/op          57.70 MB/s        1101 B/op          3 allocs/op
+BenchmarkWriter_AppendEntry_Concurrently/uint32_crc32_immediate_0_KB-32             8451            132523 ns/op                               0 B/op          0 allocs/op
+BenchmarkWriter_AppendEntry_Concurrently/uint32_crc32_immediate_1_KB-32            11030            100842 ns/op           8.99 MB/s           1 B/op          0 allocs/op
+BenchmarkWriter_AppendEntry_Concurrently/uint32_crc32_immediate_2_KB-32            11823             89187 ns/op          21.81 MB/s          34 B/op          0 allocs/op
+BenchmarkWriter_AppendEntry_Concurrently/uint32_crc32_immediate_4_KB-32            15189             71773 ns/op          54.12 MB/s         604 B/op          0 allocs/op
+BenchmarkWriter_AppendEntry_Concurrently/uint32_crc32_immediate_8_KB-32            17461             74144 ns/op         105.05 MB/s           2 B/op          0 allocs/op
+BenchmarkWriter_AppendEntry_Concurrently/uint32_crc32_immediate_16_KB-32           11529            109727 ns/op         142.29 MB/s         541 B/op          0 allocs/op
 
-BenchmarkWriter_AppendEntry_Concurrently/uint32_crc32_periodic_0_KB-32            148626             14138 ns/op             158 B/op          1 allocs/op
-BenchmarkWriter_AppendEntry_Concurrently/uint32_crc32_periodic_1_KB-32             85177             14752 ns/op          66.06 MB/s         158 B/op          1 allocs/op
-BenchmarkWriter_AppendEntry_Concurrently/uint32_crc32_periodic_2_KB-32             79036             16326 ns/op         119.35 MB/s         159 B/op          1 allocs/op
-BenchmarkWriter_AppendEntry_Concurrently/uint32_crc32_periodic_4_KB-32             75775             17902 ns/op         217.47 MB/s         159 B/op          1 allocs/op
-BenchmarkWriter_AppendEntry_Concurrently/uint32_crc32_periodic_8_KB-32             56041             22228 ns/op         350.82 MB/s         160 B/op          1 allocs/op
-BenchmarkWriter_AppendEntry_Concurrently/uint32_crc32_periodic_16_KB-32            40548             31422 ns/op         496.82 MB/s         164 B/op          1 allocs/op
+BenchmarkWriter_AppendEntry_Concurrently/uint32_crc32_periodic_0_KB-32            105349             13817 ns/op                               0 B/op          0 allocs/op
+BenchmarkWriter_AppendEntry_Concurrently/uint32_crc32_periodic_1_KB-32             81775             14900 ns/op          64.83 MB/s           0 B/op          0 allocs/op
+BenchmarkWriter_AppendEntry_Concurrently/uint32_crc32_periodic_2_KB-32             77940             15615 ns/op         124.89 MB/s           0 B/op          0 allocs/op
+BenchmarkWriter_AppendEntry_Concurrently/uint32_crc32_periodic_4_KB-32             70203             17892 ns/op         218.14 MB/s           0 B/op          0 allocs/op
+BenchmarkWriter_AppendEntry_Concurrently/uint32_crc32_periodic_8_KB-32             49248             21459 ns/op         363.35 MB/s           2 B/op          0 allocs/op
+BenchmarkWriter_AppendEntry_Concurrently/uint32_crc32_periodic_16_KB-32            41576             27650 ns/op         564.53 MB/s           6 B/op          0 allocs/op
 
-BenchmarkWriter_AppendEntry_Concurrently/uint32_crc32_grouped_0_KB-32            1096074              2473 ns/op             123 B/op          1 allocs/op
-BenchmarkWriter_AppendEntry_Concurrently/uint32_crc32_grouped_1_KB-32             526350              2242 ns/op         435.49 MB/s         140 B/op          1 allocs/op
-BenchmarkWriter_AppendEntry_Concurrently/uint32_crc32_grouped_2_KB-32             397734              2792 ns/op         698.71 MB/s         145 B/op          1 allocs/op
-BenchmarkWriter_AppendEntry_Concurrently/uint32_crc32_grouped_4_KB-32             254162              5159 ns/op         756.62 MB/s         152 B/op          1 allocs/op
-BenchmarkWriter_AppendEntry_Concurrently/uint32_crc32_grouped_8_KB-32             152569              8641 ns/op         903.42 MB/s         156 B/op          1 allocs/op
-BenchmarkWriter_AppendEntry_Concurrently/uint32_crc32_grouped_16_KB-32             61689             16407 ns/op         951.47 MB/s         158 B/op          1 allocs/op
+BenchmarkWriter_AppendEntry_Concurrently/uint32_crc32_grouped_0_KB-32             628993              1803 ns/op                               0 B/op          0 allocs/op
+BenchmarkWriter_AppendEntry_Concurrently/uint32_crc32_grouped_1_KB-32             513854              2573 ns/op         378.94 MB/s           0 B/op          0 allocs/op
+BenchmarkWriter_AppendEntry_Concurrently/uint32_crc32_grouped_2_KB-32             321556              3386 ns/op         576.80 MB/s           0 B/op          0 allocs/op
+BenchmarkWriter_AppendEntry_Concurrently/uint32_crc32_grouped_4_KB-32             218268              5239 ns/op         745.06 MB/s           0 B/op          0 allocs/op
+BenchmarkWriter_AppendEntry_Concurrently/uint32_crc32_grouped_8_KB-32             125044              9108 ns/op         856.97 MB/s           1 B/op          0 allocs/op
+BenchmarkWriter_AppendEntry_Concurrently/uint32_crc32_grouped_16_KB-32             69639             16557 ns/op         943.57 MB/s           6 B/op          0 allocs/op
 ```
