@@ -179,12 +179,10 @@ All parts of this library are covered with extensive benchmarks. See [docs/bench
 
 There are several points still open:
 
-- The creation of segments currently only works on Linux but not on Windows. This is because Linux allows for renaming
-  files which are open, which Windows does not support. For Windows support, dedicated code for Windows needs to be
-  added.
 - Reading from disk might be improved by introducing a bufio.Reader. This might result in less read calls to disk and
   improve read performance. Measurements need to be done to gain insights.
 - Extend the CLI with functionality to print details for every entry (sequence number, file offset, length).
 - Extend the CLI with functionality for YAML and JSON output.
 - Extend the CLI with functionality for rewriting an existing wal with different settings (entry length encoding, entry
   checksum type, max segment size)
+- Extend the CLI with functionality to run read and write benchmarks to disk.

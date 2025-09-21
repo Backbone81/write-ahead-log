@@ -73,6 +73,7 @@ var _ = Describe("WAL", func() {
 			}
 			Expect(reader.Next()).To(BeFalse())
 			Expect(reader.Err()).To(MatchError(segment.ErrEntryNone))
+			Expect(reader.Close()).To(Succeed())
 		})
 	})
 
@@ -139,6 +140,7 @@ var _ = Describe("WAL", func() {
 						}
 						Expect(reader.Next()).To(BeFalse())
 						Expect(reader.Err()).To(MatchError(segment.ErrEntryNone))
+						Expect(reader.Close()).To(Succeed())
 					})
 
 					It("should panic to close the reader when the writer was already created", func() {
@@ -317,6 +319,7 @@ var _ = Describe("WAL", func() {
 						Expect(reader.Value().Data).To(Equal([]byte("baz")))
 
 						Expect(reader.Next()).To(BeFalse())
+						Expect(reader.Close()).To(Succeed())
 					})
 				})
 			}

@@ -2,6 +2,7 @@ package segment
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -77,21 +78,51 @@ const DefaultPreAllocationSize = 64 * 1024 * 1024
 // firstSequenceNumber is used for deriving the file name and for storing it in the segment header.
 // createSegmentConfig provides more configuration for the new segment.
 func CreateSegment(directory string, firstSequenceNumber uint64, createSegmentConfig CreateSegmentConfig) (*SegmentWriter, error) {
-	// Remove any temporary segment file which might be there from an earlier failure.
 	newSegmentFileName := SegmentFileName(firstSequenceNumber) + ".new"
 	newSegmentFilePath := path.Join(directory, newSegmentFileName)
-	if err := os.Remove(newSegmentFilePath); err != nil && !os.IsNotExist(err) {
-		return nil, fmt.Errorf("removing the WAL segment file %q: %w", newSegmentFilePath, err)
+
+	file, header, err := createNewSegment(newSegmentFilePath, firstSequenceNumber, createSegmentConfig)
+	if err != nil {
+		return nil, fmt.Errorf("WAL segment file %q: %w", newSegmentFilePath, err)
+	}
+
+	offset, err := file.Seek(0, io.SeekCurrent)
+	if err != nil {
+		closeErr := file.Close()
+		return nil, errors.Join(
+			fmt.Errorf("reading WAL segment file position: %w", err),
+			closeErr,
+		)
+	}
+
+	// Rename the temporary segment file to the final one.
+	segmentFilePath := path.Join(directory, SegmentFileName(firstSequenceNumber))
+	file, err = renameSegment(file, offset, segmentFilePath)
+	if err != nil {
+		return nil, err
+	}
+
+	return NewSegmentWriter(file, NewSegmentWriterConfig{
+		Header:             header,
+		Offset:             offset,
+		NextSequenceNumber: firstSequenceNumber,
+	})
+}
+
+func createNewSegment(filePath string, firstSequenceNumber uint64, createSegmentConfig CreateSegmentConfig) (*os.File, encoding.Header, error) {
+	// Remove any temporary segment file which might be there from an earlier failure.
+	if err := os.Remove(filePath); err != nil && !os.IsNotExist(err) {
+		return nil, encoding.Header{}, fmt.Errorf("removing file: %w", err)
 	}
 
 	// Create the temporary segment file and pre-allocate its size.
-	file, err := os.OpenFile(newSegmentFilePath, os.O_RDWR|os.O_CREATE, 0o664) //nolint:gosec // We can not validate paths in a library.
+	file, err := os.OpenFile(filePath, os.O_RDWR|os.O_CREATE, 0o664) //nolint:gosec // We can not validate paths in a library.
 	if err != nil {
-		return nil, fmt.Errorf("creating the WAL segment file %q: %w", newSegmentFilePath, err)
+		return nil, encoding.Header{}, fmt.Errorf("creating file: %w", err)
 	}
 	if createSegmentConfig.PreAllocationSize > 0 {
 		if err := file.Truncate(createSegmentConfig.PreAllocationSize); err != nil {
-			return nil, fmt.Errorf("pre-allocating the WAL segment file %q: %w", newSegmentFilePath, err)
+			return nil, encoding.Header{}, fmt.Errorf("pre-allocating file: %w", err)
 		}
 	}
 
@@ -105,28 +136,12 @@ func CreateSegment(directory string, firstSequenceNumber uint64, createSegmentCo
 	}
 	var buffer [encoding.HeaderSize]byte
 	if err := encoding.WriteHeader(file, buffer[:], header); err != nil {
-		return nil, fmt.Errorf("writing WAL header to segment file %q: %w", newSegmentFilePath, err)
+		return nil, encoding.Header{}, fmt.Errorf("writing header: %w", err)
 	}
 	if err := file.Sync(); err != nil {
-		return nil, fmt.Errorf("flushing the WAL segment file %q: %w", newSegmentFilePath, err)
+		return nil, encoding.Header{}, fmt.Errorf("flushing file: %w", err)
 	}
-
-	// Rename the temporary segment file to the final one.
-	segmentFilePath := path.Join(directory, SegmentFileName(firstSequenceNumber))
-	if err := os.Rename(newSegmentFilePath, segmentFilePath); err != nil {
-		return nil, fmt.Errorf("renaming the WAL segment file from %q to %q: %w", newSegmentFilePath, segmentFilePath, err)
-	}
-
-	offset, err := file.Seek(0, io.SeekCurrent)
-	if err != nil {
-		return nil, fmt.Errorf("reading WAL segment file position: %w", err)
-	}
-
-	return NewSegmentWriter(file, NewSegmentWriterConfig{
-		Header:             header,
-		Offset:             offset,
-		NextSequenceNumber: firstSequenceNumber,
-	})
+	return file, header, nil
 }
 
 // NewSegmentWriterConfig is the configuration required for a call to NewSegmentWriter.
