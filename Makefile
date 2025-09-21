@@ -14,7 +14,14 @@ build: prepare
 
 .PHONY: test
 test: prepare
-	go test $(PACKAGE)
+	rm -rf tmp/coverage
+	mkdir -p tmp/coverage
+	go test --race -coverpkg=./... -cover $(PACKAGE) -args -test.gocoverdir=$(CURDIR)/tmp/coverage
+	@echo
+	@echo "========== Corrected coverage over all packages =========="
+	go tool covdata percent -i=tmp/coverage
+	go tool covdata textfmt -i=tmp/coverage -o tmp/cover.out
+	go tool cover -html=tmp/cover.out -o tmp/cover.html
 
 .PHONY: benchmark
 benchmark: prepare
