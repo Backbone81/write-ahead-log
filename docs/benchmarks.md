@@ -13,46 +13,46 @@ goos: linux
 goarch: amd64
 pkg: github.com/backbone81/write-ahead-log/internal/encoding
 cpu: Intel(R) Core(TM) i9-14900K
-BenchmarkEntryChecksumWriter/crc32_on_0_KB-32           205598827                5.836 ns/op           0 B/op          0 allocs/op
-BenchmarkEntryChecksumWriter/crc32_on_1_KB-32           47105160                25.54 ns/op            0 B/op          0 allocs/op
-BenchmarkEntryChecksumWriter/crc32_on_2_KB-32           21886632                50.30 ns/op            0 B/op          0 allocs/op
-BenchmarkEntryChecksumWriter/crc32_on_4_KB-32           12359979                97.08 ns/op            0 B/op          0 allocs/op
-BenchmarkEntryChecksumWriter/crc32_on_8_KB-32            6267903               191.1 ns/op             0 B/op          0 allocs/op
-BenchmarkEntryChecksumWriter/crc32_on_16_KB-32           3154522               380.6 ns/op             0 B/op          0 allocs/op
+BenchmarkEntryChecksumWriter/crc32_on_0_KB-32           213347302                5.623 ns/op           0 B/op          0 allocs/op
+BenchmarkEntryChecksumWriter/crc32_on_1_KB-32           46428430                25.57 ns/op            0 B/op          0 allocs/op
+BenchmarkEntryChecksumWriter/crc32_on_2_KB-32           23520754                49.00 ns/op            0 B/op          0 allocs/op
+BenchmarkEntryChecksumWriter/crc32_on_4_KB-32           12500259                95.15 ns/op            0 B/op          0 allocs/op
+BenchmarkEntryChecksumWriter/crc32_on_8_KB-32            5990434               191.6 ns/op             0 B/op          0 allocs/op
+BenchmarkEntryChecksumWriter/crc32_on_16_KB-32           3061810               384.9 ns/op             0 B/op          0 allocs/op
 
-BenchmarkEntryChecksumWriter/crc64_on_0_KB-32           249316920                4.763 ns/op           0 B/op          0 allocs/op
-BenchmarkEntryChecksumWriter/crc64_on_1_KB-32            3420583               349.8 ns/op             0 B/op          0 allocs/op
-BenchmarkEntryChecksumWriter/crc64_on_2_KB-32            1726636               694.6 ns/op             0 B/op          0 allocs/op
-BenchmarkEntryChecksumWriter/crc64_on_4_KB-32             781408              1397 ns/op               0 B/op          0 allocs/op
-BenchmarkEntryChecksumWriter/crc64_on_8_KB-32             425374              2765 ns/op               0 B/op          0 allocs/op
-BenchmarkEntryChecksumWriter/crc64_on_16_KB-32            217086              5524 ns/op               0 B/op          0 allocs/op
+BenchmarkEntryChecksumWriter/crc64_on_0_KB-32           246808075                4.824 ns/op           0 B/op          0 allocs/op
+BenchmarkEntryChecksumWriter/crc64_on_1_KB-32            3433406               347.0 ns/op             0 B/op          0 allocs/op
+BenchmarkEntryChecksumWriter/crc64_on_2_KB-32            1748809               686.7 ns/op             0 B/op          0 allocs/op
+BenchmarkEntryChecksumWriter/crc64_on_4_KB-32             858184              1396 ns/op               0 B/op          0 allocs/op
+BenchmarkEntryChecksumWriter/crc64_on_8_KB-32             399157              2791 ns/op               0 B/op          0 allocs/op
+BenchmarkEntryChecksumWriter/crc64_on_16_KB-32            216918              5539 ns/op               0 B/op          0 allocs/op
 
-BenchmarkEntryChecksumReader/crc32_on_0_KB-32           135496183                8.846 ns/op           0 B/op          0 allocs/op
-BenchmarkEntryChecksumReader/crc32_on_1_KB-32           42284120                28.44 ns/op            0 B/op          0 allocs/op
-BenchmarkEntryChecksumReader/crc32_on_2_KB-32           21688291                53.23 ns/op            0 B/op          0 allocs/op
-BenchmarkEntryChecksumReader/crc32_on_4_KB-32           11935336               100.7 ns/op             0 B/op          0 allocs/op
-BenchmarkEntryChecksumReader/crc32_on_8_KB-32            6183378               194.1 ns/op             0 B/op          0 allocs/op
-BenchmarkEntryChecksumReader/crc32_on_16_KB-32           3114247               383.5 ns/op             0 B/op          0 allocs/op
+BenchmarkEntryChecksumReader/crc32_on_0_KB-32           143847985                8.272 ns/op           0 B/op          0 allocs/op
+BenchmarkEntryChecksumReader/crc32_on_1_KB-32           41926746                28.46 ns/op            0 B/op          0 allocs/op
+BenchmarkEntryChecksumReader/crc32_on_2_KB-32           23160171                52.03 ns/op            0 B/op          0 allocs/op
+BenchmarkEntryChecksumReader/crc32_on_4_KB-32           12166480                98.78 ns/op            0 B/op          0 allocs/op
+BenchmarkEntryChecksumReader/crc32_on_8_KB-32            6235137               191.8 ns/op             0 B/op          0 allocs/op
+BenchmarkEntryChecksumReader/crc32_on_16_KB-32           3111595               383.3 ns/op             0 B/op          0 allocs/op
 
-BenchmarkEntryChecksumReader/crc64_on_0_KB-32           155132996                7.737 ns/op           0 B/op          0 allocs/op
-BenchmarkEntryChecksumReader/crc64_on_1_KB-32            3378812               353.1 ns/op             0 B/op          0 allocs/op
-BenchmarkEntryChecksumReader/crc64_on_2_KB-32            1720148               697.2 ns/op             0 B/op          0 allocs/op
-BenchmarkEntryChecksumReader/crc64_on_4_KB-32             859754              1387 ns/op               0 B/op          0 allocs/op
-BenchmarkEntryChecksumReader/crc64_on_8_KB-32             433384              2769 ns/op               0 B/op          0 allocs/op
-BenchmarkEntryChecksumReader/crc64_on_16_KB-32            216812              5526 ns/op               0 B/op          0 allocs/op
+BenchmarkEntryChecksumReader/crc64_on_0_KB-32           152380088                7.892 ns/op           0 B/op          0 allocs/op
+BenchmarkEntryChecksumReader/crc64_on_1_KB-32            3414534               351.0 ns/op             0 B/op          0 allocs/op
+BenchmarkEntryChecksumReader/crc64_on_2_KB-32            1723486               691.1 ns/op             0 B/op          0 allocs/op
+BenchmarkEntryChecksumReader/crc64_on_4_KB-32             764466              1381 ns/op               0 B/op          0 allocs/op
+BenchmarkEntryChecksumReader/crc64_on_8_KB-32             430243              2758 ns/op               0 B/op          0 allocs/op
+BenchmarkEntryChecksumReader/crc64_on_16_KB-32            216915              5504 ns/op               0 B/op          0 allocs/op
 
-BenchmarkEntryLengthWriter/uint16-32                    609504109                1.950 ns/op           0 B/op          0 allocs/op
-BenchmarkEntryLengthWriter/uint32-32                    619112922                1.945 ns/op           0 B/op          0 allocs/op
-BenchmarkEntryLengthWriter/uint64-32                    614008844                1.943 ns/op           0 B/op          0 allocs/op
-BenchmarkEntryLengthWriter/uvarint-32                   476988631                2.505 ns/op           0 B/op          0 allocs/op
+BenchmarkEntryLengthWriter/uint16-32                    614146473                1.942 ns/op           0 B/op          0 allocs/op
+BenchmarkEntryLengthWriter/uint32-32                    619950919                1.932 ns/op           0 B/op          0 allocs/op
+BenchmarkEntryLengthWriter/uint64-32                    620832824                1.937 ns/op           0 B/op          0 allocs/op
+BenchmarkEntryLengthWriter/uvarint-32                   442404314                2.725 ns/op           0 B/op          0 allocs/op
 
-BenchmarkEntryLengthReader/uint16-32                    187735140                6.379 ns/op           0 B/op          0 allocs/op
-BenchmarkEntryLengthReader/uint32-32                    240415224                5.013 ns/op           0 B/op          0 allocs/op
-BenchmarkEntryLengthReader/uint64-32                    245308364                4.881 ns/op           0 B/op          0 allocs/op
-BenchmarkEntryLengthReader/uvarint-32                   122647065                9.764 ns/op           0 B/op          0 allocs/op
+BenchmarkEntryLengthReader/uint16-32                    189283162                6.338 ns/op           0 B/op          0 allocs/op
+BenchmarkEntryLengthReader/uint32-32                    239519172                4.978 ns/op           0 B/op          0 allocs/op
+BenchmarkEntryLengthReader/uint64-32                    245305549                4.867 ns/op           0 B/op          0 allocs/op
+BenchmarkEntryLengthReader/uvarint-32                   135220516                8.879 ns/op           0 B/op          0 allocs/op
 
-BenchmarkWriteHeader-32                                 548512419                2.189 ns/op           0 B/op          0 allocs/op
-BenchmarkReadHeader-32                                  154525996                7.761 ns/op           0 B/op          0 allocs/op
+BenchmarkWriteHeader-32                                 510349974                2.216 ns/op           0 B/op          0 allocs/op
+BenchmarkReadHeader-32                                  155079242                7.732 ns/op           0 B/op          0 allocs/op
 ```
 
 ## Segment
@@ -66,117 +66,117 @@ goos: linux
 goarch: amd64
 pkg: github.com/backbone81/write-ahead-log/internal/segment
 cpu: Intel(R) Core(TM) i9-14900K
-BenchmarkSegmentReader_Next/uint16_crc32_0_KB-32                47161341                25.35 ns/op            0 B/op          0 allocs/op
-BenchmarkSegmentReader_Next/uint16_crc32_1_KB-32                20667250                57.93 ns/op            0 B/op          0 allocs/op
-BenchmarkSegmentReader_Next/uint16_crc32_2_KB-32                13981471                85.36 ns/op            0 B/op          0 allocs/op
-BenchmarkSegmentReader_Next/uint16_crc32_4_KB-32                 8586624               140.1 ns/op             0 B/op          0 allocs/op
-BenchmarkSegmentReader_Next/uint16_crc32_8_KB-32                 4757185               251.3 ns/op             0 B/op          0 allocs/op
-BenchmarkSegmentReader_Next/uint16_crc32_16_KB-32                2549586               471.8 ns/op             0 B/op          0 allocs/op
+BenchmarkSegmentReader_Next/uint16_crc32_0_KB-32                        45895807                25.03 ns/op            0 B/op          0 allocs/op
+BenchmarkSegmentReader_Next/uint16_crc32_1_KB-32                        20668233                57.75 ns/op            0 B/op          0 allocs/op
+BenchmarkSegmentReader_Next/uint16_crc32_2_KB-32                        14072797                84.99 ns/op            0 B/op          0 allocs/op
+BenchmarkSegmentReader_Next/uint16_crc32_4_KB-32                         8535564               141.4 ns/op             0 B/op          0 allocs/op
+BenchmarkSegmentReader_Next/uint16_crc32_8_KB-32                         4787287               250.1 ns/op             0 B/op          0 allocs/op
+BenchmarkSegmentReader_Next/uint16_crc32_16_KB-32                        2569746               469.4 ns/op             0 B/op          0 allocs/op
 
-BenchmarkSegmentReader_Next/uint16_crc64_0_KB-32                49389055                23.84 ns/op            0 B/op          0 allocs/op
-BenchmarkSegmentReader_Next/uint16_crc64_1_KB-32                 3189102               375.4 ns/op             0 B/op          0 allocs/op
-BenchmarkSegmentReader_Next/uint16_crc64_2_KB-32                 1660845               725.2 ns/op             0 B/op          0 allocs/op
-BenchmarkSegmentReader_Next/uint16_crc64_4_KB-32                  830443              1423 ns/op               0 B/op          0 allocs/op
-BenchmarkSegmentReader_Next/uint16_crc64_8_KB-32                  424890              2819 ns/op               0 B/op          0 allocs/op
-BenchmarkSegmentReader_Next/uint16_crc64_16_KB-32                 207048              5786 ns/op               0 B/op          0 allocs/op
+BenchmarkSegmentReader_Next/uint16_crc64_0_KB-32                        46907268                23.81 ns/op            0 B/op          0 allocs/op
+BenchmarkSegmentReader_Next/uint16_crc64_1_KB-32                         3193688               375.0 ns/op             0 B/op          0 allocs/op
+BenchmarkSegmentReader_Next/uint16_crc64_2_KB-32                         1681652               713.9 ns/op             0 B/op          0 allocs/op
+BenchmarkSegmentReader_Next/uint16_crc64_4_KB-32                          756452              1424 ns/op               0 B/op          0 allocs/op
+BenchmarkSegmentReader_Next/uint16_crc64_8_KB-32                          414782              2802 ns/op               0 B/op          0 allocs/op
+BenchmarkSegmentReader_Next/uint16_crc64_16_KB-32                         207378              5782 ns/op               0 B/op          0 allocs/op
 
-BenchmarkSegmentReader_Next/uint32_crc32_0_KB-32                45630573                25.78 ns/op            0 B/op          0 allocs/op
-BenchmarkSegmentReader_Next/uint32_crc32_1_KB-32                20818885                57.47 ns/op            0 B/op          0 allocs/op
-BenchmarkSegmentReader_Next/uint32_crc32_2_KB-32                14204276                84.52 ns/op            0 B/op          0 allocs/op
-BenchmarkSegmentReader_Next/uint32_crc32_4_KB-32                 8544732               140.2 ns/op             0 B/op          0 allocs/op
-BenchmarkSegmentReader_Next/uint32_crc32_8_KB-32                 4776418               252.2 ns/op             0 B/op          0 allocs/op
-BenchmarkSegmentReader_Next/uint32_crc32_16_KB-32                2540028               472.2 ns/op             0 B/op          0 allocs/op
+BenchmarkSegmentReader_Next/uint32_crc32_0_KB-32                        46702518                25.23 ns/op            0 B/op          0 allocs/op
+BenchmarkSegmentReader_Next/uint32_crc32_1_KB-32                        21019095                56.97 ns/op            0 B/op          0 allocs/op
+BenchmarkSegmentReader_Next/uint32_crc32_2_KB-32                        14226814                83.79 ns/op            0 B/op          0 allocs/op
+BenchmarkSegmentReader_Next/uint32_crc32_4_KB-32                         8555097               138.2 ns/op             0 B/op          0 allocs/op
+BenchmarkSegmentReader_Next/uint32_crc32_8_KB-32                         4882568               249.4 ns/op             0 B/op          0 allocs/op
+BenchmarkSegmentReader_Next/uint32_crc32_16_KB-32                        2536965               472.3 ns/op             0 B/op          0 allocs/op
 
-BenchmarkSegmentReader_Next/uint32_crc64_0_KB-32                45147618                24.96 ns/op            0 B/op          0 allocs/op
-BenchmarkSegmentReader_Next/uint32_crc64_1_KB-32                 3204740               374.2 ns/op             0 B/op          0 allocs/op
-BenchmarkSegmentReader_Next/uint32_crc64_2_KB-32                 1661263               722.4 ns/op             0 B/op          0 allocs/op
-BenchmarkSegmentReader_Next/uint32_crc64_4_KB-32                  830768              1424 ns/op               0 B/op          0 allocs/op
-BenchmarkSegmentReader_Next/uint32_crc64_8_KB-32                  423915              2821 ns/op               0 B/op          0 allocs/op
-BenchmarkSegmentReader_Next/uint32_crc64_16_KB-32                 207391              5776 ns/op               0 B/op          0 allocs/op
+BenchmarkSegmentReader_Next/uint32_crc64_0_KB-32                        42192098                24.44 ns/op            0 B/op          0 allocs/op
+BenchmarkSegmentReader_Next/uint32_crc64_1_KB-32                         3260257               367.6 ns/op             0 B/op          0 allocs/op
+BenchmarkSegmentReader_Next/uint32_crc64_2_KB-32                         1690485               709.5 ns/op             0 B/op          0 allocs/op
+BenchmarkSegmentReader_Next/uint32_crc64_4_KB-32                          835752              1387 ns/op               0 B/op          0 allocs/op
+BenchmarkSegmentReader_Next/uint32_crc64_8_KB-32                          425394              2775 ns/op               0 B/op          0 allocs/op
+BenchmarkSegmentReader_Next/uint32_crc64_16_KB-32                         208369              5754 ns/op               0 B/op          0 allocs/op
 
-BenchmarkSegmentReader_Next/uint64_crc32_0_KB-32                43697334                27.42 ns/op            0 B/op          0 allocs/op
-BenchmarkSegmentReader_Next/uint64_crc32_1_KB-32                18371131                63.23 ns/op            0 B/op          0 allocs/op
-BenchmarkSegmentReader_Next/uint64_crc32_2_KB-32                13305404                90.31 ns/op            0 B/op          0 allocs/op
-BenchmarkSegmentReader_Next/uint64_crc32_4_KB-32                 8236240               145.8 ns/op             0 B/op          0 allocs/op
-BenchmarkSegmentReader_Next/uint64_crc32_8_KB-32                 4665849               256.8 ns/op             0 B/op          0 allocs/op
-BenchmarkSegmentReader_Next/uint64_crc32_16_KB-32                2507650               477.9 ns/op             0 B/op          0 allocs/op
+BenchmarkSegmentReader_Next/uint64_crc32_0_KB-32                        43875032                26.58 ns/op            0 B/op          0 allocs/op
+BenchmarkSegmentReader_Next/uint64_crc32_1_KB-32                        18898818                62.83 ns/op            0 B/op          0 allocs/op
+BenchmarkSegmentReader_Next/uint64_crc32_2_KB-32                        13282293                90.15 ns/op            0 B/op          0 allocs/op
+BenchmarkSegmentReader_Next/uint64_crc32_4_KB-32                         8223826               144.6 ns/op             0 B/op          0 allocs/op
+BenchmarkSegmentReader_Next/uint64_crc32_8_KB-32                         4733448               255.8 ns/op             0 B/op          0 allocs/op
+BenchmarkSegmentReader_Next/uint64_crc32_16_KB-32                        2525044               475.9 ns/op             0 B/op          0 allocs/op
 
-BenchmarkSegmentReader_Next/uint64_crc64_0_KB-32                47914659                25.05 ns/op            0 B/op          0 allocs/op
-BenchmarkSegmentReader_Next/uint64_crc64_1_KB-32                 3172028               378.3 ns/op             0 B/op          0 allocs/op
-BenchmarkSegmentReader_Next/uint64_crc64_2_KB-32                 1649588               727.2 ns/op             0 B/op          0 allocs/op
-BenchmarkSegmentReader_Next/uint64_crc64_4_KB-32                  761125              1433 ns/op               0 B/op          0 allocs/op
-BenchmarkSegmentReader_Next/uint64_crc64_8_KB-32                  412868              2828 ns/op               0 B/op          0 allocs/op
-BenchmarkSegmentReader_Next/uint64_crc64_16_KB-32                 205164              5768 ns/op               0 B/op          0 allocs/op
+BenchmarkSegmentReader_Next/uint64_crc64_0_KB-32                        43411516                24.19 ns/op            0 B/op          0 allocs/op
+BenchmarkSegmentReader_Next/uint64_crc64_1_KB-32                         3164664               377.8 ns/op             0 B/op          0 allocs/op
+BenchmarkSegmentReader_Next/uint64_crc64_2_KB-32                         1661656               724.0 ns/op             0 B/op          0 allocs/op
+BenchmarkSegmentReader_Next/uint64_crc64_4_KB-32                          827866              1419 ns/op               0 B/op          0 allocs/op
+BenchmarkSegmentReader_Next/uint64_crc64_8_KB-32                          423261              2828 ns/op               0 B/op          0 allocs/op
+BenchmarkSegmentReader_Next/uint64_crc64_16_KB-32                         205608              5804 ns/op               0 B/op          0 allocs/op
 
-BenchmarkSegmentReader_Next/uvarint_crc32_0_KB-32               46763612                24.09 ns/op            0 B/op          0 allocs/op
-BenchmarkSegmentReader_Next/uvarint_crc32_1_KB-32               20832184                57.29 ns/op            0 B/op          0 allocs/op
-BenchmarkSegmentReader_Next/uvarint_crc32_2_KB-32               14046723                84.24 ns/op            0 B/op          0 allocs/op
-BenchmarkSegmentReader_Next/uvarint_crc32_4_KB-32                8486071               140.1 ns/op             0 B/op          0 allocs/op
-BenchmarkSegmentReader_Next/uvarint_crc32_8_KB-32                4777819               251.6 ns/op             0 B/op          0 allocs/op
-BenchmarkSegmentReader_Next/uvarint_crc32_16_KB-32               2521687               475.5 ns/op             0 B/op          0 allocs/op
+BenchmarkSegmentReader_Next/uvarint_crc32_0_KB-32                       46157852                23.68 ns/op            0 B/op          0 allocs/op
+BenchmarkSegmentReader_Next/uvarint_crc32_1_KB-32                       19019785                57.55 ns/op            0 B/op          0 allocs/op
+BenchmarkSegmentReader_Next/uvarint_crc32_2_KB-32                       14171289                83.27 ns/op            0 B/op          0 allocs/op
+BenchmarkSegmentReader_Next/uvarint_crc32_4_KB-32                        8584347               139.3 ns/op             0 B/op          0 allocs/op
+BenchmarkSegmentReader_Next/uvarint_crc32_8_KB-32                        4796556               249.1 ns/op             0 B/op          0 allocs/op
+BenchmarkSegmentReader_Next/uvarint_crc32_16_KB-32                       2522905               475.2 ns/op             0 B/op          0 allocs/op
 
-BenchmarkSegmentReader_Next/uvarint_crc64_0_KB-32               54617047                21.75 ns/op            0 B/op          0 allocs/op
-BenchmarkSegmentReader_Next/uvarint_crc64_1_KB-32                3208736               374.2 ns/op             0 B/op          0 allocs/op
-BenchmarkSegmentReader_Next/uvarint_crc64_2_KB-32                1661653               721.8 ns/op             0 B/op          0 allocs/op
-BenchmarkSegmentReader_Next/uvarint_crc64_4_KB-32                 842624              1422 ns/op               0 B/op          0 allocs/op
-BenchmarkSegmentReader_Next/uvarint_crc64_8_KB-32                 393436              2826 ns/op               0 B/op          0 allocs/op
-BenchmarkSegmentReader_Next/uvarint_crc64_16_KB-32                207181              5790 ns/op               0 B/op          0 allocs/op
+BenchmarkSegmentReader_Next/uvarint_crc64_0_KB-32                       54034370                21.82 ns/op            0 B/op          0 allocs/op
+BenchmarkSegmentReader_Next/uvarint_crc64_1_KB-32                        3207948               373.5 ns/op             0 B/op          0 allocs/op
+BenchmarkSegmentReader_Next/uvarint_crc64_2_KB-32                        1660592               722.0 ns/op             0 B/op          0 allocs/op
+BenchmarkSegmentReader_Next/uvarint_crc64_4_KB-32                         840100              1424 ns/op               0 B/op          0 allocs/op
+BenchmarkSegmentReader_Next/uvarint_crc64_8_KB-32                         424735              2817 ns/op               0 B/op          0 allocs/op
+BenchmarkSegmentReader_Next/uvarint_crc64_16_KB-32                        205326              5783 ns/op               0 B/op          0 allocs/op
 
-BenchmarkSegmentWriter_AppendEntry/uint16_crc32_0_KB-32         64297947                17.48 ns/op            0 B/op          0 allocs/op
-BenchmarkSegmentWriter_AppendEntry/uint16_crc32_1_KB-32         22572460                52.39 ns/op            0 B/op          0 allocs/op
-BenchmarkSegmentWriter_AppendEntry/uint16_crc32_2_KB-32         15049900                79.27 ns/op            0 B/op          0 allocs/op
-BenchmarkSegmentWriter_AppendEntry/uint16_crc32_4_KB-32          8573284               139.8 ns/op             0 B/op          0 allocs/op
-BenchmarkSegmentWriter_AppendEntry/uint16_crc32_8_KB-32          4638420               257.7 ns/op             0 B/op          0 allocs/op
-BenchmarkSegmentWriter_AppendEntry/uint16_crc32_16_KB-32         2389704               501.9 ns/op             0 B/op          0 allocs/op
+BenchmarkSegmentWriter_AppendEntry/uint16_crc32_0_KB-32                 68703928                17.40 ns/op            0 B/op          0 allocs/op
+BenchmarkSegmentWriter_AppendEntry/uint16_crc32_1_KB-32                 22918502                52.38 ns/op            0 B/op          0 allocs/op
+BenchmarkSegmentWriter_AppendEntry/uint16_crc32_2_KB-32                 15176880                78.27 ns/op            0 B/op          0 allocs/op
+BenchmarkSegmentWriter_AppendEntry/uint16_crc32_4_KB-32                  8543607               138.8 ns/op             0 B/op          0 allocs/op
+BenchmarkSegmentWriter_AppendEntry/uint16_crc32_8_KB-32                  4640926               258.1 ns/op             0 B/op          0 allocs/op
+BenchmarkSegmentWriter_AppendEntry/uint16_crc32_16_KB-32                 2408066               497.7 ns/op             0 B/op          0 allocs/op
 
-BenchmarkSegmentWriter_AppendEntry/uint16_crc64_0_KB-32         72588672                16.56 ns/op            0 B/op          0 allocs/op
-BenchmarkSegmentWriter_AppendEntry/uint16_crc64_1_KB-32          3236221               370.7 ns/op             0 B/op          0 allocs/op
-BenchmarkSegmentWriter_AppendEntry/uint16_crc64_2_KB-32          1665110               719.9 ns/op             0 B/op          0 allocs/op
-BenchmarkSegmentWriter_AppendEntry/uint16_crc64_4_KB-32           838732              1430 ns/op               0 B/op          0 allocs/op
-BenchmarkSegmentWriter_AppendEntry/uint16_crc64_8_KB-32           424620              2828 ns/op               0 B/op          0 allocs/op
-BenchmarkSegmentWriter_AppendEntry/uint16_crc64_16_KB-32          208348              5751 ns/op               0 B/op          0 allocs/op
+BenchmarkSegmentWriter_AppendEntry/uint16_crc64_0_KB-32                 72741366                16.49 ns/op            0 B/op          0 allocs/op
+BenchmarkSegmentWriter_AppendEntry/uint16_crc64_1_KB-32                  3269170               368.1 ns/op             0 B/op          0 allocs/op
+BenchmarkSegmentWriter_AppendEntry/uint16_crc64_2_KB-32                  1667859               717.7 ns/op             0 B/op          0 allocs/op
+BenchmarkSegmentWriter_AppendEntry/uint16_crc64_4_KB-32                   813744              1429 ns/op               0 B/op          0 allocs/op
+BenchmarkSegmentWriter_AppendEntry/uint16_crc64_8_KB-32                   422606              2796 ns/op               0 B/op          0 allocs/op
+BenchmarkSegmentWriter_AppendEntry/uint16_crc64_16_KB-32                  207418              5741 ns/op               0 B/op          0 allocs/op
 
-BenchmarkSegmentWriter_AppendEntry/uint32_crc32_0_KB-32         63029655                17.95 ns/op            0 B/op          0 allocs/op
-BenchmarkSegmentWriter_AppendEntry/uint32_crc32_1_KB-32         21562850                55.39 ns/op            0 B/op          0 allocs/op
-BenchmarkSegmentWriter_AppendEntry/uint32_crc32_2_KB-32         14708571                81.41 ns/op            0 B/op          0 allocs/op
-BenchmarkSegmentWriter_AppendEntry/uint32_crc32_4_KB-32          8530479               140.1 ns/op             0 B/op          0 allocs/op
-BenchmarkSegmentWriter_AppendEntry/uint32_crc32_8_KB-32          4710543               255.1 ns/op             0 B/op          0 allocs/op
-BenchmarkSegmentWriter_AppendEntry/uint32_crc32_16_KB-32         2441170               490.7 ns/op             0 B/op          0 allocs/op
+BenchmarkSegmentWriter_AppendEntry/uint32_crc32_0_KB-32                 65454710                18.04 ns/op            0 B/op          0 allocs/op
+BenchmarkSegmentWriter_AppendEntry/uint32_crc32_1_KB-32                 21679323                55.26 ns/op            0 B/op          0 allocs/op
+BenchmarkSegmentWriter_AppendEntry/uint32_crc32_2_KB-32                 14590278                81.66 ns/op            0 B/op          0 allocs/op
+BenchmarkSegmentWriter_AppendEntry/uint32_crc32_4_KB-32                  8578970               140.0 ns/op             0 B/op          0 allocs/op
+BenchmarkSegmentWriter_AppendEntry/uint32_crc32_8_KB-32                  4698958               254.4 ns/op             0 B/op          0 allocs/op
+BenchmarkSegmentWriter_AppendEntry/uint32_crc32_16_KB-32                 2416170               492.4 ns/op             0 B/op          0 allocs/op
 
-BenchmarkSegmentWriter_AppendEntry/uint32_crc64_0_KB-32         69494883                17.26 ns/op            0 B/op          0 allocs/op
-BenchmarkSegmentWriter_AppendEntry/uint32_crc64_1_KB-32          3208680               374.1 ns/op             0 B/op          0 allocs/op
-BenchmarkSegmentWriter_AppendEntry/uint32_crc64_2_KB-32          1661685               721.7 ns/op             0 B/op          0 allocs/op
-BenchmarkSegmentWriter_AppendEntry/uint32_crc64_4_KB-32           839284              1429 ns/op               0 B/op          0 allocs/op
-BenchmarkSegmentWriter_AppendEntry/uint32_crc64_8_KB-32           422901              2824 ns/op               0 B/op          0 allocs/op
-BenchmarkSegmentWriter_AppendEntry/uint32_crc64_16_KB-32          209340              5728 ns/op               0 B/op          0 allocs/op
+BenchmarkSegmentWriter_AppendEntry/uint32_crc64_0_KB-32                 69640263                17.11 ns/op            0 B/op          0 allocs/op
+BenchmarkSegmentWriter_AppendEntry/uint32_crc64_1_KB-32                  3298201               369.6 ns/op             0 B/op          0 allocs/op
+BenchmarkSegmentWriter_AppendEntry/uint32_crc64_2_KB-32                  1668832               719.5 ns/op             0 B/op          0 allocs/op
+BenchmarkSegmentWriter_AppendEntry/uint32_crc64_4_KB-32                   834564              1414 ns/op               0 B/op          0 allocs/op
+BenchmarkSegmentWriter_AppendEntry/uint32_crc64_8_KB-32                   423424              2804 ns/op               0 B/op          0 allocs/op
+BenchmarkSegmentWriter_AppendEntry/uint32_crc64_16_KB-32                  208594              5744 ns/op               0 B/op          0 allocs/op
 
-BenchmarkSegmentWriter_AppendEntry/uint64_crc32_0_KB-32         64535881                18.35 ns/op            0 B/op          0 allocs/op
-BenchmarkSegmentWriter_AppendEntry/uint64_crc32_1_KB-32         19593387                61.31 ns/op            0 B/op          0 allocs/op
-BenchmarkSegmentWriter_AppendEntry/uint64_crc32_2_KB-32         13404836                88.49 ns/op            0 B/op          0 allocs/op
-BenchmarkSegmentWriter_AppendEntry/uint64_crc32_4_KB-32          8290268               145.4 ns/op             0 B/op          0 allocs/op
-BenchmarkSegmentWriter_AppendEntry/uint64_crc32_8_KB-32          4646379               260.5 ns/op             0 B/op          0 allocs/op
-BenchmarkSegmentWriter_AppendEntry/uint64_crc32_16_KB-32         2433942               492.4 ns/op             0 B/op          0 allocs/op
+BenchmarkSegmentWriter_AppendEntry/uint64_crc32_0_KB-32                 64031096                18.39 ns/op            0 B/op          0 allocs/op
+BenchmarkSegmentWriter_AppendEntry/uint64_crc32_1_KB-32                 19530834                61.07 ns/op            0 B/op          0 allocs/op
+BenchmarkSegmentWriter_AppendEntry/uint64_crc32_2_KB-32                 13381654                87.76 ns/op            0 B/op          0 allocs/op
+BenchmarkSegmentWriter_AppendEntry/uint64_crc32_4_KB-32                  8301666               143.0 ns/op             0 B/op          0 allocs/op
+BenchmarkSegmentWriter_AppendEntry/uint64_crc32_8_KB-32                  4451118               261.9 ns/op             0 B/op          0 allocs/op
+BenchmarkSegmentWriter_AppendEntry/uint64_crc32_16_KB-32                 2416978               491.8 ns/op             0 B/op          0 allocs/op
 
-BenchmarkSegmentWriter_AppendEntry/uint64_crc64_0_KB-32         67880812                17.62 ns/op            0 B/op          0 allocs/op
-BenchmarkSegmentWriter_AppendEntry/uint64_crc64_1_KB-32          3253912               368.2 ns/op             0 B/op          0 allocs/op
-BenchmarkSegmentWriter_AppendEntry/uint64_crc64_2_KB-32          1655116               723.7 ns/op             0 B/op          0 allocs/op
-BenchmarkSegmentWriter_AppendEntry/uint64_crc64_4_KB-32           831103              1434 ns/op               0 B/op          0 allocs/op
-BenchmarkSegmentWriter_AppendEntry/uint64_crc64_8_KB-32           424234              2829 ns/op               0 B/op          0 allocs/op
-BenchmarkSegmentWriter_AppendEntry/uint64_crc64_16_KB-32          208339              5741 ns/op               0 B/op          0 allocs/op
+BenchmarkSegmentWriter_AppendEntry/uint64_crc64_0_KB-32                 66843457                17.81 ns/op            0 B/op          0 allocs/op
+BenchmarkSegmentWriter_AppendEntry/uint64_crc64_1_KB-32                  3274482               364.2 ns/op             0 B/op          0 allocs/op
+BenchmarkSegmentWriter_AppendEntry/uint64_crc64_2_KB-32                  1670439               717.8 ns/op             0 B/op          0 allocs/op
+BenchmarkSegmentWriter_AppendEntry/uint64_crc64_4_KB-32                   833280              1429 ns/op               0 B/op          0 allocs/op
+BenchmarkSegmentWriter_AppendEntry/uint64_crc64_8_KB-32                   423667              2828 ns/op               0 B/op          0 allocs/op
+BenchmarkSegmentWriter_AppendEntry/uint64_crc64_16_KB-32                  208161              5756 ns/op               0 B/op          0 allocs/op
 
-BenchmarkSegmentWriter_AppendEntry/uvarint_crc32_0_KB-32        69577647                17.24 ns/op            0 B/op          0 allocs/op
-BenchmarkSegmentWriter_AppendEntry/uvarint_crc32_1_KB-32        22806454                52.52 ns/op            0 B/op          0 allocs/op
-BenchmarkSegmentWriter_AppendEntry/uvarint_crc32_2_KB-32        15095666                79.47 ns/op            0 B/op          0 allocs/op
-BenchmarkSegmentWriter_AppendEntry/uvarint_crc32_4_KB-32         8607867               139.4 ns/op             0 B/op          0 allocs/op
-BenchmarkSegmentWriter_AppendEntry/uvarint_crc32_8_KB-32         4640164               257.7 ns/op             0 B/op          0 allocs/op
-BenchmarkSegmentWriter_AppendEntry/uvarint_crc32_16_KB-32        2383491               503.2 ns/op             0 B/op          0 allocs/op
+BenchmarkSegmentWriter_AppendEntry/uvarint_crc32_0_KB-32                69399318                17.25 ns/op            0 B/op          0 allocs/op
+BenchmarkSegmentWriter_AppendEntry/uvarint_crc32_1_KB-32                21201792                52.51 ns/op            0 B/op          0 allocs/op
+BenchmarkSegmentWriter_AppendEntry/uvarint_crc32_2_KB-32                13605531                79.18 ns/op            0 B/op          0 allocs/op
+BenchmarkSegmentWriter_AppendEntry/uvarint_crc32_4_KB-32                 8731087               138.0 ns/op             0 B/op          0 allocs/op
+BenchmarkSegmentWriter_AppendEntry/uvarint_crc32_8_KB-32                 4732102               254.6 ns/op             0 B/op          0 allocs/op
+BenchmarkSegmentWriter_AppendEntry/uvarint_crc32_16_KB-32                2381695               502.1 ns/op             0 B/op          0 allocs/op
 
-BenchmarkSegmentWriter_AppendEntry/uvarint_crc64_0_KB-32        73572508                16.41 ns/op            0 B/op          0 allocs/op
-BenchmarkSegmentWriter_AppendEntry/uvarint_crc64_1_KB-32         3229232               371.1 ns/op             0 B/op          0 allocs/op
-BenchmarkSegmentWriter_AppendEntry/uvarint_crc64_2_KB-32         1664958               717.0 ns/op             0 B/op          0 allocs/op
-BenchmarkSegmentWriter_AppendEntry/uvarint_crc64_4_KB-32          839149              1431 ns/op               0 B/op          0 allocs/op
-BenchmarkSegmentWriter_AppendEntry/uvarint_crc64_8_KB-32          410739              2830 ns/op               0 B/op          0 allocs/op
-BenchmarkSegmentWriter_AppendEntry/uvarint_crc64_16_KB-32         208875              5742 ns/op               0 B/op          0 allocs/op
+BenchmarkSegmentWriter_AppendEntry/uvarint_crc64_0_KB-32                73579068                16.38 ns/op            0 B/op          0 allocs/op
+BenchmarkSegmentWriter_AppendEntry/uvarint_crc64_1_KB-32                 3287173               368.2 ns/op             0 B/op          0 allocs/op
+BenchmarkSegmentWriter_AppendEntry/uvarint_crc64_2_KB-32                 1691874               705.5 ns/op             0 B/op          0 allocs/op
+BenchmarkSegmentWriter_AppendEntry/uvarint_crc64_4_KB-32                  849597              1425 ns/op               0 B/op          0 allocs/op
+BenchmarkSegmentWriter_AppendEntry/uvarint_crc64_8_KB-32                  423432              2812 ns/op               0 B/op          0 allocs/op
+BenchmarkSegmentWriter_AppendEntry/uvarint_crc64_16_KB-32                 207691              5742 ns/op               0 B/op          0 allocs/op
 ```
 
 ## WAL
@@ -189,66 +189,66 @@ goos: linux
 goarch: amd64
 pkg: github.com/backbone81/write-ahead-log/internal/wal
 cpu: Intel(R) Core(TM) i9-14900K
-BenchmarkReader_Next/uint32_crc32_0_KB-32        2619058               437.6 ns/op                            14 B/op          0 allocs/op
-BenchmarkReader_Next/uint32_crc32_1_KB-32        1648290               706.9 ns/op      1380.98 MB/s          14 B/op          0 allocs/op
-BenchmarkReader_Next/uint32_crc32_2_KB-32        1552500               768.4 ns/op      2541.46 MB/s          14 B/op          0 allocs/op
-BenchmarkReader_Next/uint32_crc32_4_KB-32        1417668               843.4 ns/op      4631.05 MB/s          23 B/op          0 allocs/op
-BenchmarkReader_Next/uint32_crc32_8_KB-32        1000000              1058 ns/op        7383.70 MB/s          31 B/op          0 allocs/op
-BenchmarkReader_Next/uint32_crc32_16_KB-32        822733              1459 ns/op        10712.52 MB/s         43 B/op          0 allocs/op
+BenchmarkReader_Next/uint32_crc32_0_KB-32                                        2615650               436.4 ns/op                            14 B/op          0 allocs/op
+BenchmarkReader_Next/uint32_crc32_1_KB-32                                        1681372               713.0 ns/op      1368.89 MB/s          14 B/op          0 allocs/op
+BenchmarkReader_Next/uint32_crc32_2_KB-32                                        1553118               785.7 ns/op      2485.36 MB/s          14 B/op          0 allocs/op
+BenchmarkReader_Next/uint32_crc32_4_KB-32                                        1390792               860.0 ns/op      4541.63 MB/s          22 B/op          0 allocs/op
+BenchmarkReader_Next/uint32_crc32_8_KB-32                                        1000000              1093 ns/op        7148.90 MB/s          31 B/op          0 allocs/op
+BenchmarkReader_Next/uint32_crc32_16_KB-32                                        730272              1592 ns/op        9813.42 MB/s          44 B/op          0 allocs/op
 
-BenchmarkWriter_AppendEntry_Serial/uint32_crc32_periodic_0_KB-32                   15925             73026 ns/op                               0 B/op          0 allocs/op
-BenchmarkWriter_AppendEntry_Serial/uint32_crc32_periodic_1_KB-32                   15469             78973 ns/op          12.28 MB/s           0 B/op          0 allocs/op
-BenchmarkWriter_AppendEntry_Serial/uint32_crc32_periodic_2_KB-32                   13120             92240 ns/op          20.66 MB/s           0 B/op          0 allocs/op
-BenchmarkWriter_AppendEntry_Serial/uint32_crc32_periodic_4_KB-32                   14372             87425 ns/op          44.57 MB/s           1 B/op          0 allocs/op
-BenchmarkWriter_AppendEntry_Serial/uint32_crc32_periodic_8_KB-32                   12844             88912 ns/op          87.57 MB/s           1 B/op          0 allocs/op
-BenchmarkWriter_AppendEntry_Serial/uint32_crc32_periodic_16_KB-32                  10000            111485 ns/op         139.93 MB/s           5 B/op          0 allocs/op
+BenchmarkWriter_AppendEntry_Serial/uint32_crc32_periodic_0_KB-32                   16467             74553 ns/op                               0 B/op          0 allocs/op
+BenchmarkWriter_AppendEntry_Serial/uint32_crc32_periodic_1_KB-32                   14802             76084 ns/op          12.43 MB/s           0 B/op          0 allocs/op
+BenchmarkWriter_AppendEntry_Serial/uint32_crc32_periodic_2_KB-32                   14689             89093 ns/op          21.40 MB/s           0 B/op          0 allocs/op
+BenchmarkWriter_AppendEntry_Serial/uint32_crc32_periodic_4_KB-32                   15500             79498 ns/op          48.69 MB/s           1 B/op          0 allocs/op
+BenchmarkWriter_AppendEntry_Serial/uint32_crc32_periodic_8_KB-32                   14118             98869 ns/op          78.81 MB/s           1 B/op          0 allocs/op
+BenchmarkWriter_AppendEntry_Serial/uint32_crc32_periodic_16_KB-32                  10000            115832 ns/op         134.68 MB/s           5 B/op          0 allocs/op
 
-BenchmarkWriter_AppendEntry_Serial/uint32_crc32_grouped_0_KB-32                      100          15952154 ns/op                               4 B/op          0 allocs/op
-BenchmarkWriter_AppendEntry_Serial/uint32_crc32_grouped_1_KB-32                      100          15602721 ns/op                               2 B/op          0 allocs/op
-BenchmarkWriter_AppendEntry_Serial/uint32_crc32_grouped_2_KB-32                      100          15470882 ns/op                               7 B/op          0 allocs/op
-BenchmarkWriter_AppendEntry_Serial/uint32_crc32_grouped_4_KB-32                      100          16319880 ns/op                               0 B/op          0 allocs/op
-BenchmarkWriter_AppendEntry_Serial/uint32_crc32_grouped_8_KB-32                      100          16543850 ns/op                               0 B/op          0 allocs/op
-BenchmarkWriter_AppendEntry_Serial/uint32_crc32_grouped_16_KB-32                     100          16226694 ns/op           0.62 MB/s          16 B/op          0 allocs/op
+BenchmarkWriter_AppendEntry_Serial/uint32_crc32_grouped_0_KB-32                      100          16392326 ns/op                               0 B/op          0 allocs/op
+BenchmarkWriter_AppendEntry_Serial/uint32_crc32_grouped_1_KB-32                      100          15568101 ns/op                              50 B/op          0 allocs/op
+BenchmarkWriter_AppendEntry_Serial/uint32_crc32_grouped_2_KB-32                      100          15693179 ns/op                               0 B/op          0 allocs/op
+BenchmarkWriter_AppendEntry_Serial/uint32_crc32_grouped_4_KB-32                      100          15593445 ns/op                              31 B/op          0 allocs/op
+BenchmarkWriter_AppendEntry_Serial/uint32_crc32_grouped_8_KB-32                      100          15522970 ns/op                              18 B/op          0 allocs/op
+BenchmarkWriter_AppendEntry_Serial/uint32_crc32_grouped_16_KB-32                     100          15460634 ns/op           0.65 MB/s           0 B/op          0 allocs/op
 
-BenchmarkWriter_AppendEntry_Serial/uint32_crc32_none_0_KB-32                     3822621               283.7 ns/op                             0 B/op          0 allocs/op
-BenchmarkWriter_AppendEntry_Serial/uint32_crc32_none_1_KB-32                     1675518               689.5 ns/op      1416.21 MB/s           0 B/op          0 allocs/op
-BenchmarkWriter_AppendEntry_Serial/uint32_crc32_none_2_KB-32                     1000000              1071 ns/op        1822.93 MB/s           0 B/op          0 allocs/op
-BenchmarkWriter_AppendEntry_Serial/uint32_crc32_none_4_KB-32                     1000000              1815 ns/op        2152.10 MB/s           0 B/op          0 allocs/op
-BenchmarkWriter_AppendEntry_Serial/uint32_crc32_none_8_KB-32                      340712              3486 ns/op        2240.70 MB/s           1 B/op          0 allocs/op
-BenchmarkWriter_AppendEntry_Serial/uint32_crc32_none_16_KB-32                     180058              6531 ns/op        2392.11 MB/s           5 B/op          0 allocs/op
+BenchmarkWriter_AppendEntry_Serial/uint32_crc32_none_0_KB-32                     4041283               283.1 ns/op                             0 B/op          0 allocs/op
+BenchmarkWriter_AppendEntry_Serial/uint32_crc32_none_1_KB-32                     1610323               694.2 ns/op      1406.29 MB/s           0 B/op          0 allocs/op
+BenchmarkWriter_AppendEntry_Serial/uint32_crc32_none_2_KB-32                     1000000              1064 ns/op        1836.32 MB/s           0 B/op          0 allocs/op
+BenchmarkWriter_AppendEntry_Serial/uint32_crc32_none_4_KB-32                      591164              1816 ns/op        2150.58 MB/s           0 B/op          0 allocs/op
+BenchmarkWriter_AppendEntry_Serial/uint32_crc32_none_8_KB-32                      384589              3343 ns/op        2336.82 MB/s           1 B/op          0 allocs/op
+BenchmarkWriter_AppendEntry_Serial/uint32_crc32_none_16_KB-32                     172198              6566 ns/op        2379.14 MB/s           5 B/op          0 allocs/op
 
-BenchmarkWriter_AppendEntry_Serial/uint32_crc32_immediate_0_KB-32                    184           6735988 ns/op                               0 B/op          0 allocs/op
-BenchmarkWriter_AppendEntry_Serial/uint32_crc32_immediate_1_KB-32                    176           6369914 ns/op                               0 B/op          0 allocs/op
-BenchmarkWriter_AppendEntry_Serial/uint32_crc32_immediate_2_KB-32                    228           5525752 ns/op                               0 B/op          0 allocs/op
-BenchmarkWriter_AppendEntry_Serial/uint32_crc32_immediate_4_KB-32                    182           6565794 ns/op                               0 B/op          0 allocs/op
-BenchmarkWriter_AppendEntry_Serial/uint32_crc32_immediate_8_KB-32                    176           6696168 ns/op           0.85 MB/s           0 B/op          0 allocs/op
-BenchmarkWriter_AppendEntry_Serial/uint32_crc32_immediate_16_KB-32                   171           6847013 ns/op           1.71 MB/s           0 B/op          0 allocs/op
+BenchmarkWriter_AppendEntry_Serial/uint32_crc32_immediate_0_KB-32                    214           5597603 ns/op                               0 B/op          0 allocs/op
+BenchmarkWriter_AppendEntry_Serial/uint32_crc32_immediate_1_KB-32                    189           5948959 ns/op                               0 B/op          0 allocs/op
+BenchmarkWriter_AppendEntry_Serial/uint32_crc32_immediate_2_KB-32                    177           5765668 ns/op                               0 B/op          0 allocs/op
+BenchmarkWriter_AppendEntry_Serial/uint32_crc32_immediate_4_KB-32                    225           5218694 ns/op                               0 B/op          0 allocs/op
+BenchmarkWriter_AppendEntry_Serial/uint32_crc32_immediate_8_KB-32                    230           5673873 ns/op           0.77 MB/s           0 B/op          0 allocs/op
+BenchmarkWriter_AppendEntry_Serial/uint32_crc32_immediate_16_KB-32                   177           5974674 ns/op           1.89 MB/s           0 B/op          0 allocs/op
 
-BenchmarkWriter_AppendEntry_Concurrently/uint32_crc32_none_0_KB-32               1000000              1281 ns/op                               0 B/op          0 allocs/op
-BenchmarkWriter_AppendEntry_Concurrently/uint32_crc32_none_1_KB-32                953257              1504 ns/op         648.51 MB/s           0 B/op          0 allocs/op
-BenchmarkWriter_AppendEntry_Concurrently/uint32_crc32_none_2_KB-32                567954              1871 ns/op        1043.76 MB/s           0 B/op          0 allocs/op
-BenchmarkWriter_AppendEntry_Concurrently/uint32_crc32_none_4_KB-32                517234              2595 ns/op        1504.76 MB/s           0 B/op          0 allocs/op
-BenchmarkWriter_AppendEntry_Concurrently/uint32_crc32_none_8_KB-32                260772              4505 ns/op        1733.80 MB/s           1 B/op          0 allocs/op
-BenchmarkWriter_AppendEntry_Concurrently/uint32_crc32_none_16_KB-32               160706              7570 ns/op        2064.12 MB/s           5 B/op          0 allocs/op
+BenchmarkWriter_AppendEntry_Concurrently/uint32_crc32_none_0_KB-32               1153914              1108 ns/op                               0 B/op          0 allocs/op
+BenchmarkWriter_AppendEntry_Concurrently/uint32_crc32_none_1_KB-32               1000000              1427 ns/op         683.73 MB/s           0 B/op          0 allocs/op
+BenchmarkWriter_AppendEntry_Concurrently/uint32_crc32_none_2_KB-32                679923              1839 ns/op        1061.48 MB/s           0 B/op          0 allocs/op
+BenchmarkWriter_AppendEntry_Concurrently/uint32_crc32_none_4_KB-32                532069              2860 ns/op        1365.33 MB/s           0 B/op          0 allocs/op
+BenchmarkWriter_AppendEntry_Concurrently/uint32_crc32_none_8_KB-32                268378              4717 ns/op        1655.58 MB/s           1 B/op          0 allocs/op
+BenchmarkWriter_AppendEntry_Concurrently/uint32_crc32_none_16_KB-32               139796              7897 ns/op        1978.23 MB/s           5 B/op          0 allocs/op
 
-BenchmarkWriter_AppendEntry_Concurrently/uint32_crc32_immediate_0_KB-32             8451            132523 ns/op                               0 B/op          0 allocs/op
-BenchmarkWriter_AppendEntry_Concurrently/uint32_crc32_immediate_1_KB-32            11030            100842 ns/op           8.99 MB/s           1 B/op          0 allocs/op
-BenchmarkWriter_AppendEntry_Concurrently/uint32_crc32_immediate_2_KB-32            11823             89187 ns/op          21.81 MB/s          34 B/op          0 allocs/op
-BenchmarkWriter_AppendEntry_Concurrently/uint32_crc32_immediate_4_KB-32            15189             71773 ns/op          54.12 MB/s         604 B/op          0 allocs/op
-BenchmarkWriter_AppendEntry_Concurrently/uint32_crc32_immediate_8_KB-32            17461             74144 ns/op         105.05 MB/s           2 B/op          0 allocs/op
-BenchmarkWriter_AppendEntry_Concurrently/uint32_crc32_immediate_16_KB-32           11529            109727 ns/op         142.29 MB/s         541 B/op          0 allocs/op
+BenchmarkWriter_AppendEntry_Concurrently/uint32_crc32_immediate_0_KB-32             8752            125994 ns/op                               3 B/op          0 allocs/op
+BenchmarkWriter_AppendEntry_Concurrently/uint32_crc32_immediate_1_KB-32            12942             97724 ns/op           9.49 MB/s          20 B/op          0 allocs/op
+BenchmarkWriter_AppendEntry_Concurrently/uint32_crc32_immediate_2_KB-32            13040             90753 ns/op          21.13 MB/s           0 B/op          0 allocs/op
+BenchmarkWriter_AppendEntry_Concurrently/uint32_crc32_immediate_4_KB-32            14280             75944 ns/op          50.72 MB/s         152 B/op          0 allocs/op
+BenchmarkWriter_AppendEntry_Concurrently/uint32_crc32_immediate_8_KB-32            14719             78176 ns/op          99.07 MB/s         127 B/op          0 allocs/op
+BenchmarkWriter_AppendEntry_Concurrently/uint32_crc32_immediate_16_KB-32            8954            200193 ns/op          77.54 MB/s        1234 B/op          3 allocs/op
 
-BenchmarkWriter_AppendEntry_Concurrently/uint32_crc32_periodic_0_KB-32            105349             13817 ns/op                               0 B/op          0 allocs/op
-BenchmarkWriter_AppendEntry_Concurrently/uint32_crc32_periodic_1_KB-32             81775             14900 ns/op          64.83 MB/s           0 B/op          0 allocs/op
-BenchmarkWriter_AppendEntry_Concurrently/uint32_crc32_periodic_2_KB-32             77940             15615 ns/op         124.89 MB/s           0 B/op          0 allocs/op
-BenchmarkWriter_AppendEntry_Concurrently/uint32_crc32_periodic_4_KB-32             70203             17892 ns/op         218.14 MB/s           0 B/op          0 allocs/op
-BenchmarkWriter_AppendEntry_Concurrently/uint32_crc32_periodic_8_KB-32             49248             21459 ns/op         363.35 MB/s           2 B/op          0 allocs/op
-BenchmarkWriter_AppendEntry_Concurrently/uint32_crc32_periodic_16_KB-32            41576             27650 ns/op         564.53 MB/s           6 B/op          0 allocs/op
+BenchmarkWriter_AppendEntry_Concurrently/uint32_crc32_periodic_0_KB-32            150778              7527 ns/op                               0 B/op          0 allocs/op
+BenchmarkWriter_AppendEntry_Concurrently/uint32_crc32_periodic_1_KB-32            145207              9811 ns/op          98.97 MB/s           0 B/op          0 allocs/op
+BenchmarkWriter_AppendEntry_Concurrently/uint32_crc32_periodic_2_KB-32            156138              9301 ns/op         209.33 MB/s           0 B/op          0 allocs/op
+BenchmarkWriter_AppendEntry_Concurrently/uint32_crc32_periodic_4_KB-32            122088             10798 ns/op         361.07 MB/s           1 B/op          0 allocs/op
+BenchmarkWriter_AppendEntry_Concurrently/uint32_crc32_periodic_8_KB-32             59461             19189 ns/op         406.61 MB/s           1 B/op          0 allocs/op
+BenchmarkWriter_AppendEntry_Concurrently/uint32_crc32_periodic_16_KB-32            44600             30250 ns/op         515.87 MB/s           6 B/op          0 allocs/op
 
-BenchmarkWriter_AppendEntry_Concurrently/uint32_crc32_grouped_0_KB-32             628993              1803 ns/op                               0 B/op          0 allocs/op
-BenchmarkWriter_AppendEntry_Concurrently/uint32_crc32_grouped_1_KB-32             513854              2573 ns/op         378.94 MB/s           0 B/op          0 allocs/op
-BenchmarkWriter_AppendEntry_Concurrently/uint32_crc32_grouped_2_KB-32             321556              3386 ns/op         576.80 MB/s           0 B/op          0 allocs/op
-BenchmarkWriter_AppendEntry_Concurrently/uint32_crc32_grouped_4_KB-32             218268              5239 ns/op         745.06 MB/s           0 B/op          0 allocs/op
-BenchmarkWriter_AppendEntry_Concurrently/uint32_crc32_grouped_8_KB-32             125044              9108 ns/op         856.97 MB/s           1 B/op          0 allocs/op
-BenchmarkWriter_AppendEntry_Concurrently/uint32_crc32_grouped_16_KB-32             69639             16557 ns/op         943.57 MB/s           6 B/op          0 allocs/op
+BenchmarkWriter_AppendEntry_Concurrently/uint32_crc32_grouped_0_KB-32             642428              2847 ns/op                               0 B/op          0 allocs/op
+BenchmarkWriter_AppendEntry_Concurrently/uint32_crc32_grouped_1_KB-32             394404              3075 ns/op         317.40 MB/s           0 B/op          0 allocs/op
+BenchmarkWriter_AppendEntry_Concurrently/uint32_crc32_grouped_2_KB-32             368478              4187 ns/op         465.97 MB/s           0 B/op          0 allocs/op
+BenchmarkWriter_AppendEntry_Concurrently/uint32_crc32_grouped_4_KB-32             206770              5356 ns/op         728.66 MB/s           0 B/op          0 allocs/op
+BenchmarkWriter_AppendEntry_Concurrently/uint32_crc32_grouped_8_KB-32             130074              9198 ns/op         849.22 MB/s           2 B/op          0 allocs/op
+BenchmarkWriter_AppendEntry_Concurrently/uint32_crc32_grouped_16_KB-32             80832             17276 ns/op         904.42 MB/s           6 B/op          0 allocs/op
 ```
