@@ -45,6 +45,7 @@ func GetSegments(directory string) ([]uint64, error) {
 	return result, nil
 }
 
+// SegmentFromSequenceNumber provides the segment the given sequence number is located in.
 func SegmentFromSequenceNumber(directory string, sequenceNumber uint64) (uint64, error) {
 	segments, err := GetSegments(directory)
 	if err != nil {

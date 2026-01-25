@@ -4,6 +4,9 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"os"
+	"path"
+	"slices"
 	"time"
 
 	"github.com/backbone81/write-ahead-log/internal/encoding"
@@ -171,6 +174,36 @@ func (r *Reader) ToWriter(options ...WriterOption) (*Writer, error) {
 		return nil, err
 	}
 	return &newWriter, nil
+}
+
+// Truncate removes all log entries and log segments following the current log entry.
+func (r *Reader) Truncate(options ...WriterOption) (*Writer, error) {
+	// Delete all segments which follow the current one.
+	segments, err := segment.GetSegments(r.directory)
+	if err != nil {
+		return nil, err
+	}
+	index, exact := slices.BinarySearch(segments, r.segmentReader.Value().SequenceNumber)
+	if !exact {
+		// If we did not find an exact match, the index is where it would be. So we move back by one to get the segment
+		// which would contain the sequence number.
+		index -= 1
+	}
+	if index < 0 {
+		// The sequence number is in a segment which does not exist in the directory.
+		return nil, fmt.Errorf("no segment available for sequence number %q", r.segmentReader.Value().SequenceNumber)
+	}
+	for i := index + 1; i < len(segments); i++ {
+		if err := os.Remove(path.Join(r.directory, segment.SegmentFileName(segments[i]))); err != nil {
+			return nil, err
+		}
+	}
+
+	// Then remove what was already written to the rest of the current segment.
+	if err := r.segmentReader.Truncate(); err != nil {
+		return nil, err
+	}
+	return r.ToWriter(options...)
 }
 
 // Close closes the underlying reader.

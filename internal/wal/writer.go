@@ -248,3 +248,11 @@ func (w *Writer) rollover() error {
 	RolloverDuration.Observe(duration)
 	return nil
 }
+
+// Sync flushes the content of the WAL to stable storage.
+func (w *Writer) Sync() error {
+	w.mutex.Lock()
+	defer w.mutex.Unlock()
+
+	return w.segmentWriter.Sync()
+}

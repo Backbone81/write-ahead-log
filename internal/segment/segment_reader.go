@@ -18,6 +18,7 @@ type SegmentReaderFile interface {
 	io.ReadCloser
 	io.Seeker
 	Name() string
+	Truncate(size int64) error
 }
 
 // SegmentReader provides functionality for reading from a single segment file.
@@ -295,6 +296,22 @@ func (r *SegmentReader) ToWriter() (*SegmentWriter, error) {
 // Close closes the file the SegmentReader is reading from.
 func (r *SegmentReader) Close() error {
 	if err := r.file.Close(); err != nil {
+		return err
+	}
+	return nil
+}
+
+// Truncate clears the content of the current segment from the current position to the end of the already allocated
+// file.
+func (r *SegmentReader) Truncate() error {
+	if r.offset == r.fileSize {
+		// We are already at the end of the file. No need to truncate anything.
+		return nil
+	}
+	if err := r.file.Truncate(r.offset); err != nil {
+		return err
+	}
+	if err := r.file.Truncate(r.fileSize); err != nil {
 		return err
 	}
 	return nil
