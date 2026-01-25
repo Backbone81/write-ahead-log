@@ -314,5 +314,6 @@ func (r *SegmentReader) Truncate() error {
 	if err := r.file.Truncate(r.fileSize); err != nil {
 		return err
 	}
+	r.err = ErrEntryNone
 	return nil
 }
