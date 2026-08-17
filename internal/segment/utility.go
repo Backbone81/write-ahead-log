@@ -1,6 +1,7 @@
 package segment
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"regexp"
@@ -26,14 +27,10 @@ func GetSegments(directory string) ([]uint64, error) {
 			// We are not interested in directories.
 			continue
 		}
-		if !segmentFileNamePattern.MatchString(dirEntry.Name()) {
-			// We are not interested in files not matching our naming pattern.
-			continue
-		}
-		sequenceNumber, err := strconv.ParseUint(strings.TrimSuffix(dirEntry.Name(), ".wal"), 10, 64)
+		sequenceNumber, err := SequenceNumberFromFileName(dirEntry.Name())
 		if err != nil {
-			// This error should never occur when our file name pattern is correct.
-			return nil, fmt.Errorf("parsing the sequence number from the file name: %w", err)
+			// We are not interested in files not matching our expectations.
+			continue
 		}
 		result = append(result, sequenceNumber)
 	}
@@ -66,4 +63,19 @@ func SegmentFromSequenceNumber(directory string, sequenceNumber uint64) (uint64,
 
 func SegmentFileName(sequenceNumber uint64) string {
 	return fmt.Sprintf("%020d.wal", sequenceNumber)
+}
+
+func SequenceNumberFromFileName(fileName string) (uint64, error) {
+	if !segmentFileNamePattern.MatchString(fileName) {
+		// The file name does not match the expected pattern.
+		return 0, errors.New("does not match expected file pattern")
+	}
+
+	sequenceNumber, err := strconv.ParseUint(strings.TrimSuffix(fileName, ".wal"), 10, 64)
+	if err != nil {
+		// This error should never occur when our file name pattern is correct.
+		return 0, fmt.Errorf("parsing the sequence number from the file name: %w", err)
+	}
+
+	return sequenceNumber, nil
 }
