@@ -11,3 +11,6 @@ var SegmentFileName = intsegment.SegmentFileName
 
 // SequenceNumberFromFileName returns the sequence number used for the segment file name.
 var SequenceNumberFromFileName = intsegment.SequenceNumberFromFileName
+
+// SegmentFromSequenceNumber returns the segment a sequence number belongs to.
+var SegmentFromSequenceNumber = intsegment.SegmentFromSequenceNumber
