@@ -56,7 +56,7 @@ func SegmentFromSequenceNumber(directory string, sequenceNumber uint64) (uint64,
 	}
 	if index < 0 {
 		// The sequence number is in a segment which does not exist in the directory.
-		return 0, fmt.Errorf("no segment available for sequence number %q", sequenceNumber)
+		return 0, fmt.Errorf("no segment available for sequence number %d", sequenceNumber)
 	}
 	return segments[index], nil
 }

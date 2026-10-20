@@ -59,8 +59,8 @@ var DefaultHeader = Header{
 func WriteHeader(writer io.Writer, buffer []byte, header Header) error {
 	copy(buffer[:4], header.Magic[:])
 	Endian.PutUint16(buffer[4:6], header.Version)
-	buffer[6] = byte(header.EntryLengthEncoding)
-	buffer[7] = byte(header.EntryChecksumType)
+	buffer[6] = byte(header.EntryLengthEncoding) //nolint:gosec // Correct EntryLengthEncoding values will not overflow
+	buffer[7] = byte(header.EntryChecksumType)   //nolint:gosec // Correct EntryChecksumType values will not overflow
 	Endian.PutUint64(buffer[8:16], header.FirstSequenceNumber)
 	if _, err := writer.Write(buffer); err != nil {
 		return headerWriteError(err)
